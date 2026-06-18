@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="デザインラボ" />
+<meta name="theme-color" content="#1e3a8a" />
+<link rel="apple-touch-icon" href="data:image/png;base64,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" />
+<link rel="icon" href="data:image/png;base64,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" />
+<title>中学受験デザインラボ スケジューラー</title>
+<style>
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #f5f6fa; font-family: -apple-system, 'Hiragino Sans', 'Yu Gothic', sans-serif; color: #1f2937; }
+  body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
+  input, select, button { font-family: inherit; }
+</style>
+</head>
+<body>
+<div id="root"><div style="padding:40px;text-align:center;color:#6b7280;">読み込み中…</div></div>
+<script>window.LOGO_SRC = "data:image/jpeg;base64,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WOlWNrJjG+G3RGx6ZAzV+rqTi0oxVkiIxabctwooorI0PHPjCR/wu74agkczv/6GK9jqvPZWdxcQ3M9pBLNAcxSPGGaP/dJ5H4VYq5z5kl2JjGzb7guNwz0zzXg+peLvj/Bqt5HZeCYZ7VZmWF2s85QE7T/rB1GK94pMD0p06ihurinFy2dj58utX/aH8RxnSm8PxaIk42PdJAItqnr8xZsfgK9d+Gfg2w8D+F4tHsneVy3m3Ez43SSkDcfYccDtXTYFLVVK3MuVJJeQo0+V3buwrE8a+KNI8IaE+ta3LLHZpIsZMce9tzdBj8K26qatpthq1k1lqVpDdW7EExyqGGR0NY3saHll9+0L4AS0layl1C5ugh8mJrUqHfHCk54yam/Z00DV7bT9Z8WeIYZYtT1+6E5WQc+WBlT6gncRj2FegW3hfw3bMjQaBpcbJjaRapkY/CtitpVIqPLBWuZKEua8mFclZeB9D0zx3qnjstPJqFzDg723LCoQBinfJC+tdbSMAylWAIIwQe9ZRk1saNJnzz8ZvjB4I8U/DzUND0i7u5L24KeWr2xVThvXNe7eGQR4b0sEEEWUPHp+7WoV8MeG1YMNA0sEHIItE4/StYAAYAAA9K0nODioxREYyTbbMbQ/C2h6LrGqavptitveapIJLuRWPzkdOOgHXoO9bVFFZtt7lpWCiiikMKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooA//Z";</script>
+<script>
+/* ===== 中学受験デザインラボ スケジューラー（素JS版・外部部品ゼロ） ===== */
+"use strict";
+
+// ── 定数 ──
+var RATE_OUTSIDE = 3750, RATE_INSIDE = 3000, RATE_TA = 3000, SHIFT_FEE = 100;
+var STORAGE_KEY = "tutorSchedulerData_v1";
+var DAYS = ["月","火","水","木","金","土","日"];
+var MONTHS = ["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
+var TAB_ORDER = ["week","month","requests","students","income"];
+var REQUEST_STATUS = {
+  open:      { label:"未確定",        color:"#b45309", bg:"#fef3c7" },
+  mine:      { label:"自分で対応",     color:"#059669", bg:"#d1fae5" },
+  searching: { label:"他の先生を探し中", color:"#2563eb", bg:"#dbeafe" },
+  deputized: { label:"代理確定",       color:"#6b7280", bg:"#e5e7eb" }
+};
+
+// ── 初期サンプルデータ ──
+var initialData = {
+  sessions: [
+    { id:1, studentId:1, date:"2026-06-15", startTime:"16:00", endTime:"17:30", deputized:false, note:"", kind:"tutor", snapshotRate:RATE_OUTSIDE },
+    { id:2, studentId:2, date:"2026-06-16", startTime:"15:00", endTime:"16:30", deputized:false, note:"", kind:"tutor", snapshotRate:RATE_INSIDE },
+    { id:5, studentId:1, date:"2026-06-20", startTime:"16:00", endTime:"17:30", deputized:false, note:"", kind:"tutor", snapshotRate:RATE_OUTSIDE }
+  ],
+  students: [
+    { id:1, name:"生徒A", type:"outside", color:"#6366f1", leader:true,  leaderUntil:"", retired:false, retiredDate:"" },
+    { id:2, name:"生徒B", type:"inside",  color:"#8b5cf6", leader:false, leaderUntil:"", retired:false, retiredDate:"" }
+  ],
+  otherEvents: [
+    { id:1, date:"2026-06-16", title:"バスケ部練習", category:"部活", color:"#f97316" }
+  ],
+  requests: [
+    { id:1, studentName:"佐藤さん", candidateDates:[{date:"2026-06-20",memo:"16時〜希望"}], note:"数学", slots:[{status:"open",confirmedDate:""},{status:"mine",confirmedDate:"2026-06-20"}] }
+  ],
+  manualIncome: {},
+  manualNet: {},
+  unavailable: []
+};
+
+// ── 状態 ──
+var S = {
+  data: null,
+  view: "week",
+  currentWeek: ymd(new Date()),
+  currentMonth: { year: new Date().getFullYear(), month: new Date().getMonth()+1 },
+  incomeYear: new Date().getFullYear(),  // 収入タブの年間グラフの年（詳細とは独立）
+  modal: null   // モーダル状態オブジェクト
+};
+
+// ── ユーティリティ ──
+function ymd(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); }
+function pad(n){ return String(n).padStart(2,"0"); }
+function todayStr(){ return ymd(new Date()); }
+function dowJP(dateStr){ return DAYS[(new Date(dateStr).getDay()+6)%7]; }
+function mmdd(dateStr){ var d=new Date(dateStr); return (d.getMonth()+1)+"/"+d.getDate(); }
+function el(tag, attrs, children){
+  var e=document.createElement(tag);
+  if(attrs) for(var k in attrs){
+    if(k==="style") e.style.cssText=attrs[k];
+    else if(k==="class") e.className=attrs[k];
+    else if(k.slice(0,2)==="on") e.addEventListener(k.slice(2).toLowerCase(), attrs[k]);
+    else if(k==="html") e.innerHTML=attrs[k];
+    else e.setAttribute(k, attrs[k]);
+  }
+  if(children!=null){
+    if(!Array.isArray(children)) children=[children];
+    children.forEach(function(c){ if(c==null||c===false) return; e.appendChild(typeof c==="object"?c:document.createTextNode(String(c))); });
+  }
+  return e;
+}
+
+// ── 保存 / 読込 ──
+function load(){
+  try{
+    var raw=localStorage.getItem(STORAGE_KEY);
+    if(!raw) return JSON.parse(JSON.stringify(initialData));
+    var p=JSON.parse(raw);
+    return {
+      sessions: p.sessions||[], students: p.students||[],
+      otherEvents: p.otherEvents||[], requests: p.requests||[],
+      manualIncome: p.manualIncome||{},
+      manualNet: p.manualNet||{},
+      unavailable: p.unavailable||[]
+    };
+  }catch(e){ return JSON.parse(JSON.stringify(initialData)); }
+}
+function save(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(S.data)); }catch(e){}
+}
+function newId(arr){ return arr.reduce(function(m,x){return Math.max(m,x.id||0);},0)+1; }
+
+// ── 計算ロジック ──
+function studentById(id){ return S.data.students.find(function(s){return s.id===id;}); }
+function getRate(student){ return student && student.type==="outside" ? RATE_OUTSIDE : RATE_INSIDE; }
+function durationH(start,end){
+  var a=start.split(":"), b=end.split(":");
+  var mins=(parseInt(b[0])*60+parseInt(b[1]))-(parseInt(a[0])*60+parseInt(a[1]));
+  return Math.max(0, mins/60);
+}
+function calcIncome(s){
+  if(s.deputized) return 0;
+  if(s.kind==="meeting") return 0;
+  if(s.kind==="fixed") return s.fixedAmount||0;
+  var rate = s.snapshotRate!=null ? s.snapshotRate : (s.kind==="ta" ? RATE_TA : getRate(studentById(s.studentId)));
+  return Math.round(durationH(s.startTime,s.endTime)*rate);
+}
+function sessionInfo(s){
+  if(s.kind==="ta") return { name:"TA業務", color:"#0ea5e9" };
+  if(s.kind==="fixed") return { name:(s.note||"固定報酬"), color:"#a855f7" };
+  if(s.kind==="meeting") return { name:(s.note||"面談"), color:"#14b8a6" };
+  var st=studentById(s.studentId);
+  if(st) return { name:st.name, color:st.color };
+  // 生徒なしの代理：入力した生徒名を表示（なければ「代理」）
+  return { name:(s.depName && s.depName.trim() ? s.depName : "代理"), color:"#9ca3af" };
+}
+function isShiftEligible(student, session){
+  if(!student||!student.leader) return false;
+  if(!student.leaderUntil) return true;
+  return session.date.slice(0,7) <= student.leaderUntil;
+}
+function shiftFeeForStudent(studentId){
+  var st=studentById(studentId);
+  if(!st||!st.leader) return {count:0,fee:0};
+  var c=S.data.sessions.filter(function(s){return s.studentId===studentId && isShiftEligible(st,s);}).length;
+  return {count:c, fee:c*SHIFT_FEE};
+}
+function shiftFeeForMonth(year,month){
+  var ym=year+"-"+pad(month), c=0;
+  S.data.sessions.forEach(function(s){
+    if(s.date.slice(0,7)!==ym) return;
+    if(isShiftEligible(studentById(s.studentId), s)) c++;
+  });
+  return {count:c, fee:c*SHIFT_FEE};
+}
+function autoIncomeFor(year,month){
+  return S.data.sessions.reduce(function(sum,s){
+    if(parseInt(s.date.slice(0,4))===year && parseInt(s.date.slice(5,7))===month) return sum+calcIncome(s);
+    return sum;
+  },0);
+}
+function monthKey(y,m){ return y+"-"+pad(m); }
+function displayIncomeFor(y,m){
+  var k=monthKey(y,m);
+  return S.data.manualIncome[k]!=null ? S.data.manualIncome[k] : autoIncomeFor(y,m);
+}
+function isManual(y,m){ return S.data.manualIncome[monthKey(y,m)]!=null; }
+// 受け取った額（手取り・手動入力）。支給月ベースのキーで保持
+// 勤務月→支給月（翌月）
+function payMonthOf(wy,wm){ return wm===12?{year:wy+1,month:1}:{year:wy,month:wm+1}; }
+// 受け取った額（手取り）。キーは「支給月」。引数は勤務月(y,m)なので支給月に変換して参照
+function netFor(y,m){ var p=payMonthOf(y,m); var k=monthKey(p.year,p.month); return S.data.manualNet[k]!=null ? S.data.manualNet[k] : null; }
+function hasNet(y,m){ var p=payMonthOf(y,m); return S.data.manualNet[monthKey(p.year,p.month)]!=null; }
+// 支給月キーで直接参照（年間集計用）
+function netByPayMonth(py,pm){ var k=monthKey(py,pm); return S.data.manualNet[k]!=null?S.data.manualNet[k]:null; }
+function hasNetByPayMonth(py,pm){ return S.data.manualNet[monthKey(py,pm)]!=null; }
+function workMonthFor(py,pm){ return pm===1?{year:py-1,month:12}:{year:py,month:pm-1}; }
+function paidIncomeFor(py,pm){
+  var w=workMonthFor(py,pm);
+  return displayIncomeFor(w.year,w.month)+shiftFeeForMonth(w.year,w.month).fee;
+}
+function weekDates(base){
+  var d=new Date(base), out=[];
+  for(var i=0;i<7;i++){ var nd=new Date(d); nd.setDate(d.getDate()+i); out.push(ymd(nd)); }
+  return out;
+}
+function sortDaySessions(arr){
+  return arr.slice().sort(function(a,b){
+    if(!!a.deputized!==!!b.deputized) return a.deputized?1:-1;
+    return a.startTime.localeCompare(b.startTime);
+  });
+}
+function requestProgress(r){
+  var slots=r.slots||[];
+  var done=slots.filter(function(s){return s.status==="mine"||s.status==="deputized";}).length;
+  return { done:done, total:slots.length, allDone: slots.length>0 && done===slots.length };
+}
+// バイト不可情報（その日）
+function unavailFor(date){ return S.data.unavailable.filter(function(u){return u.date===date;}); }
+// その日の枠の状態: "full"=終日不可(赤) / "partial"=時間帯不可(黄) / null
+function dayAvailStatus(date){
+  var u=unavailFor(date);
+  if(u.length===0) return null;
+  if(u.some(function(x){return x.allDay;})) return "full";
+  return "partial";
+}
+
+/* ===== 描画・UI ===== */
+
+// 共通スタイル文字列
+var ST = {
+  navBtn: "width:40px;height:40px;border-radius:10px;border:1px solid #d8dcec;background:#fff;color:#4f46e5;font-size:20px;cursor:pointer;",
+  addBtn: "background:#4f46e5;color:#fff;border:none;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:6px;",
+  ghostBtn: "background:#fff;color:#4f46e5;border:1px solid #d8dcec;border-radius:10px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;",
+  input: "width:100%;background:#f5f6fa;border:1px solid #d8dcec;border-radius:8px;color:#1f2937;padding:8px 12px;font-size:14px;margin-top:4px;margin-bottom:12px;box-sizing:border-box;-webkit-appearance:none;appearance:none;",
+  label: "font-size:12px;color:#6b7280;display:block;",
+  card: "background:#fff;border:1px solid #e2e5ee;border-radius:12px;padding:14px 16px;"
+};
+
+var ROOT = null;
+function render(){
+  if(!ROOT) ROOT=document.getElementById("root");
+  ROOT.innerHTML="";
+  ROOT.appendChild(header());
+  var content=el("div",{style:"padding:16px 8px;max-width:900px;margin:0 auto;min-height:70vh;"});
+  // スワイプでタブ切替
+  attachSwipe(content, function(){ goTab(-1); }, function(){ goTab(1); });
+  if(S.view==="week") content.appendChild(viewWeek());
+  else if(S.view==="month") content.appendChild(viewMonth());
+  else if(S.view==="requests") content.appendChild(viewRequests());
+  else if(S.view==="students") content.appendChild(viewStudents());
+  else if(S.view==="income") content.appendChild(viewIncome());
+  ROOT.appendChild(content);
+  if(S.modal) ROOT.appendChild(S.modal);
+}
+
+function goTab(dir){
+  var i=TAB_ORDER.indexOf(S.view), n=i+dir;
+  if(n>=0&&n<TAB_ORDER.length){ S.view=TAB_ORDER[n]; render(); }
+}
+function attachSwipe(node, onPrev, onNext){
+  var sx=0, sy=0;
+  node.addEventListener("touchstart", function(e){ sx=e.touches[0].clientX; sy=e.touches[0].clientY; });
+  node.addEventListener("touchend", function(e){
+    var dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
+    if(Math.abs(dx)>60 && Math.abs(dx)>Math.abs(dy)*1.5){ dx>0?onPrev():onNext(); }
+  });
+}
+
+function header(){
+  var logo=el("img",{src:window.LOGO_SRC,alt:"中学受験デザインラボ",style:"height:44px;width:auto;display:block;"});
+  var gearBtn=el("button",{style:"position:absolute;right:0;top:50%;transform:translateY(-50%);background:#f5f6fa;border:1px solid #d8dcec;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;line-height:1;",onclick:openSettings},["⚙"]);
+  var logoWrap=el("div",{style:"position:relative;display:flex;justify-content:center;align-items:center;margin-bottom:12px;min-height:44px;"},[logo, gearBtn]);
+  var tabs=el("div",{style:"display:flex;gap:6px;"});
+  var labels={week:"週",month:"月",requests:"依頼",students:"生徒",income:"収入"};
+  TAB_ORDER.forEach(function(v){
+    var openCount = v==="requests" ? S.data.requests.filter(function(r){return !requestProgress(r).allDone;}).length : 0;
+    var active=S.view===v;
+    var btn=el("button",{
+      style:"flex:1;padding:12px 4px;border-radius:10px 10px 0 0;border:none;cursor:pointer;font-size:15px;position:relative;"+
+        "background:"+(active?"#1e3a8a":"#eef0f7")+";color:"+(active?"#fff":"#64748b")+";font-weight:"+(active?"700":"500")+";"+
+        "border-bottom:3px solid "+(active?"#1e3a8a":"transparent")+";",
+      onclick:function(){ S.view=v; render(); }
+    },[labels[v]]);
+    if(openCount>0){
+      btn.appendChild(el("span",{style:"position:absolute;top:4px;right:6px;background:#f59e0b;color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;"},[String(openCount)]));
+    }
+    tabs.appendChild(btn);
+  });
+  return el("div",{style:"background:#fff;border-bottom:2px solid #1e3a8a;padding:12px 16px 0;"},[logoWrap,tabs]);
+}
+
+// ── 週ビュー ──
+function viewWeek(){
+  var wd=weekDates(S.currentWeek);
+  var head=el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"},[
+    el("button",{style:ST.navBtn,onclick:function(){ shiftWeek(-7); }},["‹"]),
+    el("div",{style:"font-size:15px;font-weight:600;color:#4f46e5;"},[mmdd(wd[0])+" 〜 "+mmdd(wd[6])]),
+    el("button",{style:ST.navBtn,onclick:function(){ shiftWeek(7); }},["›"])
+  ]);
+  var grid=el("div",{style:"display:flex;flex-direction:column;gap:8px;"});
+  wd.forEach(function(date){
+    var isToday=date===todayStr();
+    var avail=dayAvailStatus(date);
+    var ds=sortDaySessions(S.data.sessions.filter(function(s){return s.date===date;}));
+    var ev=S.data.otherEvents.filter(function(e){return e.date===date;});
+    var borderColor = avail==="full"?"#ef4444":(avail==="partial"?"#f59e0b":(isToday?"#6366f1":"#e2e5ee"));
+    var borderWidth = avail?"2px":"1px";
+    var bgColor = avail==="full"?"#fef2f2":(avail==="partial"?"#fffbeb":(isToday?"#eef2ff":"#fff"));
+    var cell=el("div",{
+      style:"background:"+bgColor+";border:"+borderWidth+" solid "+borderColor+";border-radius:12px;padding:10px 12px;display:flex;gap:12px;align-items:flex-start;min-width:0;cursor:pointer;",
+      onclick:function(){ openDayDetail(date); }
+    });
+    // 左：日付ブロック
+    var dateBlock=el("div",{style:"flex-shrink:0;width:52px;text-align:center;"},[
+      el("div",{style:"font-size:11px;font-weight:700;color:"+(isToday?"#4f46e5":"#6b7280")+";"},["("+dowJP(date)+")"]),
+      el("div",{style:"font-size:20px;font-weight:700;width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:2px auto 0;"+(isToday?"color:#fff;background:#6366f1;":"color:#1f2937;")},[String(new Date(date).getDate())]),
+      avail==="full"?el("div",{style:"font-size:9px;color:#ef4444;font-weight:700;margin-top:2px;"},["終日不可"]):(avail==="partial"?el("div",{style:"font-size:9px;color:#d97706;font-weight:700;margin-top:2px;"},["一部不可"]):null)
+    ]);
+    cell.appendChild(dateBlock);
+    // 右：予定リスト
+    var listCol=el("div",{style:"flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;"});
+    if(ds.length===0 && ev.length===0){
+      listCol.appendChild(el("div",{style:"font-size:12px;color:#cbd5e1;padding:6px 0;"},["予定なし（タップで追加）"]));
+    }
+    ds.forEach(function(s){
+      var info=sessionInfo(s);
+      listCol.appendChild(el("div",{style:"background:"+(s.deputized?"#fafafa":info.color+"20")+";border-left:4px solid "+(s.deputized?"#d1d5db":info.color)+";border-radius:0 6px 6px 0;padding:6px 10px;opacity:"+(s.deputized?"0.6":"1")+";display:flex;align-items:center;justify-content:space-between;gap:8px;"},[
+        el("div",{style:"min-width:0;"},[
+          el("div",{style:"font-size:14px;font-weight:"+(s.deputized?"500":"700")+";color:"+(s.deputized?"#6b7280":"#1f2937")+";overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"},[info.name+(s.deputized?"（代理）":"")]),
+          el("div",{style:"font-size:12px;color:#6b7280;"},[s.startTime+"〜"+s.endTime+(s.note?" · "+s.note:"")])
+        ])
+      ]));
+    });
+    ev.forEach(function(e){
+      listCol.appendChild(el("div",{style:"background:"+e.color+"15;border-left:4px solid "+e.color+";border-radius:0 6px 6px 0;padding:6px 10px;"},[
+        el("div",{style:"font-size:14px;color:"+e.color+";font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"},[e.title]),
+        el("div",{style:"font-size:11px;color:#9ca3af;"},[e.category])
+      ]));
+    });
+    cell.appendChild(listCol);
+    grid.appendChild(cell);
+  });
+  return el("div",{},[head,grid]);
+}
+function shiftWeek(days){ var d=new Date(S.currentWeek); d.setDate(d.getDate()+days); S.currentWeek=ymd(d); render(); }
+
+// ── 月ビュー ──
+function viewMonth(){
+  var y=S.currentMonth.year, m=S.currentMonth.month;
+  var head=el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"},[
+    el("button",{style:ST.navBtn,onclick:function(){ shiftMonth(-1); }},["‹"]),
+    el("div",{style:"font-size:16px;font-weight:700;color:#4f46e5;"},[y+"年 "+m+"月"]),
+    el("button",{style:ST.navBtn,onclick:function(){ shiftMonth(1); }},["›"])
+  ]);
+  var dow=el("div",{style:"display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;"});
+  DAYS.forEach(function(d){ dow.appendChild(el("div",{style:"text-align:center;font-size:11px;color:#9ca3af;font-weight:700;"},[d])); });
+  var firstDay=new Date(y,m-1,1).getDay();
+  var off=firstDay===0?6:firstDay-1;
+  var dim=new Date(y,m,0).getDate();
+  var cells=[]; for(var i=0;i<off;i++) cells.push(null);
+  for(var d=1;d<=dim;d++) cells.push(d);
+  while(cells.length%7!==0) cells.push(null);
+  var grid=el("div",{style:"display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"});
+  cells.forEach(function(day){
+    if(!day){ grid.appendChild(el("div",{})); return; }
+    var dateStr=y+"-"+pad(m)+"-"+pad(day);
+    var isToday=dateStr===todayStr();
+    var avail=dayAvailStatus(dateStr);
+    var ds=sortDaySessions(S.data.sessions.filter(function(s){return s.date===dateStr;}));
+    var ev=S.data.otherEvents.filter(function(e){return e.date===dateStr;});
+    var borderColor = avail==="full"?"#ef4444":(avail==="partial"?"#f59e0b":(isToday?"#6366f1":"#e2e5ee"));
+    var borderWidth = avail?"2px":"1px";
+    var bgColor = avail==="full"?"#fef2f2":(avail==="partial"?"#fffbeb":(isToday?"#eef2ff":"#fff"));
+    var cell=el("div",{
+      style:"background:"+bgColor+";border:"+borderWidth+" solid "+borderColor+";border-radius:8px;padding:5px 4px;min-height:80px;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0;overflow:hidden;",
+      onclick:function(){ openDayDetail(dateStr); }
+    });
+    cell.appendChild(el("div",{style:"font-size:12px;font-weight:700;text-align:center;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 2px;"+(isToday?"color:#fff;background:#6366f1;":"color:#6b7280;")},[String(day)]));
+    ds.forEach(function(s){
+      var info=sessionInfo(s);
+      cell.appendChild(el("div",{style:"background:"+(s.deputized?"#fafafa":info.color+"35")+";border-left:3px solid "+(s.deputized?"#d1d5db":info.color)+";border-radius:0 3px 3px 0;padding:2px 3px;opacity:"+(s.deputized?"0.55":"1")+";"},[
+        el("div",{style:"font-size:9px;font-weight:"+(s.deputized?"400":"600")+";color:"+(s.deputized?"#9ca3af":"#1f2937")+";overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"},[info.name])
+      ]));
+    });
+    ev.forEach(function(e){
+      cell.appendChild(el("div",{style:"background:"+e.color+"25;border-left:3px solid "+e.color+";border-radius:0 3px 3px 0;padding:2px 3px;"},[
+        el("div",{style:"font-size:9px;color:"+e.color+";font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"},[e.title])
+      ]));
+    });
+    grid.appendChild(cell);
+  });
+  return el("div",{},[head,dow,grid]);
+}
+function shiftMonth(dir){
+  var m=S.currentMonth.month+dir, y=S.currentMonth.year;
+  if(m<1){m=12;y--;} if(m>12){m=1;y++;}
+  S.currentMonth={year:y,month:m}; render();
+}
+
+/* ===== 依頼・生徒・収入ビュー＋モーダル ===== */
+
+// ── 依頼ビュー ──
+function viewRequests(){
+  var head=el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"},[
+    el("div",{style:"font-size:14px;color:#6b7280;"},["授業リクエスト ("+S.data.requests.length+"件)"]),
+    el("button",{style:ST.addBtn,onclick:function(){ openRequestEdit(null); }},["+ 依頼を追加"])
+  ]);
+  var wrap=el("div",{},[head]);
+  if(S.data.requests.length===0) wrap.appendChild(el("div",{style:"color:#9ca3af;text-align:center;padding:40px;"},["リクエストはありません"]));
+  var sorted=S.data.requests.slice().sort(function(a,b){ return (requestProgress(a).allDone?1:0)-(requestProgress(b).allDone?1:0); });
+  sorted.forEach(function(r){
+    var pg=requestProgress(r);
+    var card=el("div",{style:ST.card+"margin-bottom:10px;cursor:pointer;"+(pg.allDone?"opacity:0.6;":""),onclick:function(){ openRequestEdit(r); }});
+    var top=el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"},[
+      el("div",{style:"font-size:15px;font-weight:700;color:#1f2937;"},[r.studentName||"(名前なし)"]),
+      el("div",{style:"display:flex;align-items:center;gap:8px;"},[
+        el("span",{style:"font-size:12px;color:"+(pg.allDone?"#059669":"#b45309")+";font-weight:600;"},[pg.done+"/"+pg.total+"コマ確定"]),
+        el("button",{style:"background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#ef4444;font-size:18px;width:38px;height:38px;cursor:pointer;flex-shrink:0;",onclick:function(e){ e.stopPropagation(); if(confirm("「"+r.studentName+"」の依頼を削除しますか？")){ S.data.requests=S.data.requests.filter(function(x){return x.id!==r.id;}); save(); render(); } }},["×"])
+      ])
+    ]);
+    card.appendChild(top);
+    if(r.candidateDates&&r.candidateDates.length){
+      var cd=el("div",{style:"display:flex;flex-direction:column;gap:4px;margin-bottom:10px;"});
+      cd.appendChild(el("span",{style:"font-size:11px;color:#6b7280;"},["候補日"]));
+      var chips=el("div",{style:"display:flex;gap:6px;flex-wrap:wrap;"});
+      r.candidateDates.forEach(function(c){
+        var date=typeof c==="string"?c:c.date, memo=typeof c==="string"?"":(c.memo||"");
+        chips.appendChild(el("span",{style:"font-size:12px;color:#4f46e5;background:#eef2ff;padding:3px 10px;border-radius:8px;"},[mmdd(date)+"（"+dowJP(date)+"）"+(memo?" · "+memo:"")]));
+      });
+      cd.appendChild(chips); card.appendChild(cd);
+    }
+    (r.slots||[]).forEach(function(slot,i){
+      var st=REQUEST_STATUS[slot.status]||REQUEST_STATUS.open;
+      card.appendChild(el("div",{style:"display:flex;align-items:center;gap:8px;margin-top:4px;"},[
+        el("span",{style:"font-size:12px;color:#6b7280;"},["コマ"+(i+1)]),
+        el("span",{style:"font-size:11px;font-weight:700;color:"+st.color+";background:"+st.bg+";padding:2px 8px;border-radius:8px;"},[st.label]),
+        slot.confirmedDate?el("span",{style:"font-size:11px;color:#6b7280;"},["→ "+mmdd(slot.confirmedDate)+"（"+dowJP(slot.confirmedDate)+"）"+(slot.startTime?" "+slot.startTime+"〜"+(slot.endTime||""):"")]):null
+      ]));
+    });
+    if(r.note) card.appendChild(el("div",{style:"font-size:12px;color:#6b7280;margin-top:8px;"},["メモ: "+r.note]));
+    wrap.appendChild(card);
+  });
+  return wrap;
+}
+
+// ── 生徒ビュー ──
+function viewStudents(){
+  var wrap=el("div",{});
+  var active=S.data.students.filter(function(s){return !s.retired;});
+  var retired=S.data.students.filter(function(s){return s.retired;});
+  function card(student){
+    var ss=S.data.sessions.filter(function(s){return s.studentId===student.id && !s.deputized;});
+    var inc=ss.reduce(function(sum,s){return sum+calcIncome(s);},0);
+    var hrs=ss.reduce(function(sum,s){return sum+durationH(s.startTime,s.endTime);},0);
+    var shift=shiftFeeForStudent(student.id);
+    var typeLabel=student.type==="outside"?"塾外":"塾内";
+    var typeBadge=el("span",{style:"font-size:11px;font-weight:600;color:#4f46e5;background:#e0e7ff;padding:2px 8px;border-radius:8px;"},[typeLabel]);
+    var nameRow=el("div",{style:"display:flex;align-items:center;gap:6px;flex-wrap:wrap;"},[
+      el("span",{style:"font-size:15px;font-weight:700;color:#1f2937;"},[student.name]),
+      student.leader?el("span",{style:"font-size:10px;font-weight:700;color:#4f46e5;background:#e0e7ff;padding:2px 7px;border-radius:10px;"},["リーダー"+(student.leaderUntil?"〜"+student.leaderUntil.replace("-","/"):"")]):null,
+      student.retired?el("span",{style:"font-size:10px;font-weight:700;color:#b91c1c;background:#fee2e2;padding:2px 7px;border-radius:10px;"},["退塾"+(student.retiredDate?" "+mmdd(student.retiredDate):"")]):null
+    ]);
+    var right=el("div",{style:"text-align:right;"},[
+      el("div",{style:"font-size:14px;font-weight:600;color:#059669;"},["¥"+inc.toLocaleString()]),
+      el("div",{style:"font-size:12px;color:#6b7280;"},[hrs+"時間"]),
+      (student.leader&&shift.count>0)?el("div",{style:"font-size:11px;color:#4f46e5;margin-top:2px;"},["調整料 ¥"+shift.fee.toLocaleString()+"（"+shift.count+"コマ）"]):null
+    ]);
+    return el("div",{style:ST.card+"display:flex;align-items:center;gap:14px;cursor:pointer;"+(student.retired?"opacity:0.7;":""),onclick:function(){ openStudentEdit(student); }},[
+      el("div",{style:"width:12px;height:36px;border-radius:6px;background:"+(student.retired?"#cbd5e1":student.color)+";flex-shrink:0;"}),
+      el("div",{style:"flex:1;min-width:0;"},[nameRow, el("div",{style:"margin-top:3px;"},[typeBadge])]),
+      right,
+      el("button",{style:"background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#ef4444;font-size:18px;width:38px;height:38px;cursor:pointer;flex-shrink:0;",onclick:function(e){ e.stopPropagation(); if(confirm("「"+student.name+"」を完全に削除しますか？\nこの生徒の授業データもすべて消えます。\n（在籍をやめるだけなら編集で「退塾」を使うとデータは残せます）")){ S.data.students=S.data.students.filter(function(x){return x.id!==student.id;}); save(); render(); } }},["×"])
+    ]);
+  }
+  wrap.appendChild(el("div",{style:"font-size:14px;color:#6b7280;margin-bottom:12px;"},["在籍中の生徒 ("+active.length+"人)"]));
+  var list=el("div",{style:"display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"});
+  if(active.length===0) list.appendChild(el("div",{style:"color:#9ca3af;text-align:center;padding:20px;"},["在籍中の生徒はいません"]));
+  active.forEach(function(s){ list.appendChild(card(s)); });
+  wrap.appendChild(list);
+  wrap.appendChild(el("button",{style:ST.addBtn,onclick:function(){ openStudentEdit(null); }},["+ 生徒を追加"]));
+
+  if(retired.length){
+    wrap.appendChild(el("div",{style:"font-size:14px;color:#9ca3af;margin:24px 0 12px;"},["退塾した生徒 ("+retired.length+"人)"]));
+    var rlist=el("div",{style:"display:flex;flex-direction:column;gap:8px;"});
+    retired.forEach(function(s){ rlist.appendChild(card(s)); });
+    wrap.appendChild(rlist);
+  }
+
+  return wrap;
+}
+
+// ── 収入ビュー ──
+function viewIncome(){
+  var y=S.currentMonth.year, m=S.currentMonth.month;
+  var wrap=el("div",{});
+  // 当月
+  wrap.appendChild(el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"},[
+    el("button",{style:ST.navBtn,onclick:function(){ shiftMonth(-1); }},["‹"]),
+    el("div",{style:"font-size:16px;font-weight:700;color:#4f46e5;"},[y+"年 "+m+"月"]),
+    el("button",{style:ST.navBtn,onclick:function(){ shiftMonth(1); }},["›"])
+  ]));
+  var inc=displayIncomeFor(y,m), shift=shiftFeeForMonth(y,m), manual=isManual(y,m), auto=autoIncomeFor(y,m);
+  var c=el("div",{style:ST.card+"margin-bottom:16px;"});
+  c.appendChild(el("div",{style:"display:flex;align-items:center;justify-content:space-between;"},[
+    el("span",{style:"font-size:13px;color:#6b7280;"},["稼いだ額（額面）"+(manual?"（手動）":"")]),
+    el("span",{style:"font-size:20px;font-weight:700;color:#059669;"},["¥"+inc.toLocaleString()])
+  ]));
+  if(manual) c.appendChild(el("div",{style:"font-size:11px;color:#9ca3af;margin-top:2px;"},["自動計算では ¥"+auto.toLocaleString()]));
+  if(shift.fee>0) c.appendChild(el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-top:8px;"},[
+    el("span",{style:"font-size:13px;color:#6b7280;"},["見込みシフト調整料（"+shift.count+"コマ）"]),
+    el("span",{style:"font-size:15px;font-weight:600;color:#4f46e5;"},["+¥"+shift.fee.toLocaleString()])
+  ]));
+  c.appendChild(el("div",{style:"border-top:1px solid #e2e5ee;margin-top:10px;padding-top:10px;display:flex;align-items:center;justify-content:space-between;"},[
+    el("span",{style:"font-size:14px;color:#1f2937;font-weight:700;"},["月の合計"]),
+    el("span",{style:"font-size:24px;font-weight:800;color:#1f2937;"},["¥"+(inc+shift.fee).toLocaleString()])
+  ]));
+  var editBtns=el("div",{style:"display:flex;gap:8px;margin-top:12px;"},[
+    el("button",{style:ST.ghostBtn+"padding:6px 14px;font-size:12px;",onclick:function(){ openIncomeEdit(y,m,inc); }},["授業収入を手動入力"]),
+    manual?el("button",{style:ST.ghostBtn+"padding:6px 14px;font-size:12px;color:#4f46e5;",onclick:function(){ delete S.data.manualIncome[monthKey(y,m)]; save(); render(); }},["自動計算に戻す"]):null
+  ]);
+  c.appendChild(editBtns);
+  wrap.appendChild(c);
+
+  // 受け取った額（手取り・手動入力）。この月の勤務分は翌月支給
+  var net=netFor(y,m);
+  var payP=payMonthOf(y,m);
+  var nc=el("div",{style:ST.card+"margin-bottom:16px;"});
+  nc.appendChild(el("div",{style:"display:flex;align-items:center;justify-content:space-between;"},[
+    el("span",{style:"font-size:13px;color:#6b7280;"},["受け取った額（"+payP.year+"年"+payP.month+"月 支給）"]),
+    el("span",{style:"font-size:20px;font-weight:700;color:"+(net!=null?"#1e3a8a":"#cbd5e1")+";"},[net!=null?"¥"+net.toLocaleString():"未入力"])
+  ]));
+  nc.appendChild(el("div",{style:"font-size:11px;color:#9ca3af;margin-top:2px;"},[m+"月の勤務分は"+payP.month+"月に支給。手取り額（税・保険料を引いた後）を入力"]));
+  nc.appendChild(el("div",{style:"display:flex;gap:8px;margin-top:10px;"},[
+    el("button",{style:ST.ghostBtn+"padding:6px 14px;font-size:12px;",onclick:function(){ openNetEdit(y,m,net); }},["受け取った額を入力"]),
+    (net!=null)?el("button",{style:ST.ghostBtn+"padding:6px 14px;font-size:12px;color:#4f46e5;",onclick:function(){ delete S.data.manualNet[monthKey(payP.year,payP.month)]; save(); render(); }},["クリア"]):null
+  ]));
+  wrap.appendChild(nc);
+
+  // 月内訳
+  var monthSessions=S.data.sessions.filter(function(s){ return parseInt(s.date.slice(0,4))===y&&parseInt(s.date.slice(5,7))===m&&!s.deputized&&calcIncome(s)>0; });
+  if(monthSessions.length){
+    var rows={};
+    monthSessions.forEach(function(s){
+      var key,label;
+      if(s.kind==="ta"){key="ta";label="TA業務";}
+      else if(s.kind==="fixed"){key="fixed";label="固定報酬";}
+      else { var info=sessionInfo(s); key="stu_"+(s.studentId!=null?s.studentId:info.name); label=info.name; }
+      if(!rows[key]) rows[key]={label:label,amount:0,count:0};
+      rows[key].amount+=calcIncome(s); rows[key].count++;
+    });
+    var list=Object.keys(rows).map(function(k){return rows[k];}).sort(function(a,b){return b.amount-a.amount;});
+    var bd=el("div",{style:ST.card+"margin-bottom:16px;"});
+    bd.appendChild(el("div",{style:"font-size:13px;font-weight:700;color:#1f2937;margin-bottom:10px;"},[m+"月の内訳"]));
+    list.forEach(function(row){
+      bd.appendChild(el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"},[
+        el("span",{style:"font-size:13px;color:#374151;"},[row.label+"  ("+row.count+"コマ)"]),
+        el("span",{style:"font-size:14px;font-weight:600;color:#1f2937;"},["¥"+row.amount.toLocaleString()])
+      ]));
+    });
+    wrap.appendChild(bd);
+  }
+
+  // 生徒ごとの調整コマ数（その月）
+  var ym=y+"-"+pad(m);
+  var shiftRows={};
+  S.data.sessions.forEach(function(s){
+    if(s.date.slice(0,7)!==ym) return;
+    var st=studentById(s.studentId);
+    if(isShiftEligible(st,s)){ shiftRows[st.id]=shiftRows[st.id]||{name:st.name,count:0}; shiftRows[st.id].count++; }
+  });
+  var shiftList=Object.keys(shiftRows).map(function(k){return shiftRows[k];}).sort(function(a,b){return b.count-a.count;});
+  if(shiftList.length){
+    var sb=el("div",{style:ST.card+"margin-bottom:16px;"});
+    sb.appendChild(el("div",{style:"font-size:13px;font-weight:700;color:#1f2937;margin-bottom:4px;"},[m+"月 シフト調整したコマ数（生徒ごと）"]));
+    sb.appendChild(el("div",{style:"font-size:11px;color:#9ca3af;margin-bottom:10px;"},["塾に報告する用。リーダーを務める生徒の対象コマ数です。"]));
+    var totalShift=0;
+    shiftList.forEach(function(row){
+      totalShift+=row.count;
+      sb.appendChild(el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"},[
+        el("span",{style:"font-size:13px;color:#374151;"},[row.name]),
+        el("span",{style:"font-size:14px;font-weight:600;color:#4f46e5;"},[row.count+"コマ"])
+      ]));
+    });
+    sb.appendChild(el("div",{style:"border-top:1px solid #e2e5ee;margin-top:6px;padding-top:8px;display:flex;align-items:center;justify-content:space-between;"},[
+      el("span",{style:"font-size:13px;font-weight:700;color:#1f2937;"},["合計"]),
+      el("span",{style:"font-size:15px;font-weight:700;color:#4f46e5;"},[totalShift+"コマ（¥"+(totalShift*SHIFT_FEE).toLocaleString()+"）"])
+    ]));
+    wrap.appendChild(sb);
+  }
+
+  // 年間（支給ベース）
+  var gy = S.incomeYear;
+  wrap.appendChild(el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"},[
+    el("button",{style:ST.navBtn+"width:30px;height:30px;font-size:16px;",onclick:function(){ S.incomeYear--; render(); }},["‹"]),
+    el("div",{style:"font-size:14px;font-weight:700;color:#6b7280;"},[gy+"年 年間"]),
+    el("button",{style:ST.navBtn+"width:30px;height:30px;font-size:16px;",onclick:function(){ S.incomeYear++; render(); }},["›"])
+  ]));
+  var values=MONTHS.map(function(_,i){ return paidIncomeFor(gy,i+1); });
+  var yearTotal=values.reduce(function(a,b){return a+b;},0);
+  var netValues=MONTHS.map(function(_,i){ var n=netByPayMonth(gy,i+1); return n!=null?n:0; });
+  var netYearTotal=netValues.reduce(function(a,b){return a+b;},0);
+  var netCount=MONTHS.filter(function(_,i){ return hasNetByPayMonth(gy,i+1); }).length;
+  var max=Math.max.apply(null,values.concat([1]));
+  wrap.appendChild(el("div",{style:ST.card+"margin-bottom:6px;text-align:center;"},[
+    el("div",{style:"font-size:12px;color:#6b7280;margin-bottom:4px;"},[gy+"年 稼いだ額（額面・調整料込み）"]),
+    el("div",{style:"font-size:28px;font-weight:700;color:#059669;"},["¥"+yearTotal.toLocaleString()])
+  ]));
+  wrap.appendChild(el("div",{style:ST.card+"margin-bottom:6px;text-align:center;"},[
+    el("div",{style:"font-size:12px;color:#6b7280;margin-bottom:4px;"},[gy+"年 受け取った額（手取り合計）"]),
+    el("div",{style:"font-size:28px;font-weight:700;color:#1e3a8a;"},["¥"+netYearTotal.toLocaleString()]),
+    el("div",{style:"font-size:11px;color:#9ca3af;margin-top:4px;"},[netCount+"ヶ月分入力済み（手動入力した月の合計）"])
+  ]));
+  wrap.appendChild(el("div",{style:"font-size:11px;color:#9ca3af;margin-bottom:14px;text-align:center;"},["※月末締め・翌月10日支給。"+gy+"年に支給された額（所得税の対象）。月カードを押すと、その勤務月の明細を上に表示します。"]));
+  var ygrid=el("div",{style:"display:grid;grid-template-columns:repeat(3,1fr);gap:10px;"});
+  MONTHS.forEach(function(label,i){
+    var mm=i+1, val=values[i], pct=(val/max)*100, w=workMonthFor(gy,mm), man=isManual(w.year,w.month);
+    var netVal=netByPayMonth(gy,mm);
+    // タップ：上の詳細を「勤務月」に飛ばす（年もまたぐ）。年間グラフ(incomeYear)は動かさない
+    ygrid.appendChild(el("div",{style:ST.card+"padding:12px 14px;cursor:pointer;",onclick:function(){ S.currentMonth={year:w.year,month:w.month}; window.scrollTo(0,0); render(); }},[
+      el("div",{style:"font-size:12px;color:#6b7280;margin-bottom:2px;"},[label+"支給"+(man?" ※手動":"")]),
+      el("div",{style:"font-size:9px;color:#9ca3af;margin-bottom:4px;"},[w.year+"年"+w.month+"月勤務分"]),
+      el("div",{style:"background:#e2e5ee;border-radius:4px;height:4px;margin-bottom:6px;"},[el("div",{style:"background:"+(val>0?"#6366f1":"#e5e7eb")+";height:4px;border-radius:4px;width:"+pct+"%;"})]),
+      el("div",{style:"font-size:9px;color:#9ca3af;"},["稼いだ"]),
+      el("div",{style:"font-size:14px;font-weight:700;color:"+(val>0?"#059669":"#e5e7eb")+";margin-bottom:4px;"},["¥"+val.toLocaleString()]),
+      el("div",{style:"font-size:9px;color:#9ca3af;"},["受取"]),
+      el("div",{style:"font-size:14px;font-weight:700;color:"+(netVal!=null?"#1e3a8a":"#e5e7eb")+";"},[netVal!=null?"¥"+netVal.toLocaleString():"—"])
+    ]));
+  });
+  wrap.appendChild(ygrid);
+  return wrap;
+}
+
+/* ===== モーダル・バックアップ・起動 ===== */
+
+function closeModal(){ S.modal=null; render(); }
+
+// 設定メニュー（データ管理）
+function openSettings(){
+  var body=[];
+  body.push(el("div",{style:"font-size:12px;color:#9ca3af;margin-bottom:8px;"},["データ管理"]));
+  body.push(el("button",{style:ST.addBtn+"background:#1e3a8a;width:100%;justify-content:center;margin-bottom:8px;",onclick:function(){ exportData(); }},["⬇ バックアップを書き出す"]));
+  var lbl=el("label",{style:ST.ghostBtn+"cursor:pointer;width:100%;display:flex;justify-content:center;box-sizing:border-box;margin-bottom:8px;"},["⬆ バックアップから復元"]);
+  var inp=el("input",{type:"file",accept:"application/json,.json",style:"display:none;",onchange:function(e){ if(e.target.files[0]){ loadBackup(e.target.files[0]); e.target.value=""; } }});
+  lbl.appendChild(inp); body.push(lbl);
+  body.push(el("div",{style:"font-size:11px;color:#9ca3af;margin:8px 0 20px;line-height:1.6;"},["「書き出す」でデータをファイルに保存できます。iCloud Drive（ファイルアプリ）に保存すれば、万一のときも復元できます。週1回ほどの書き出しをおすすめします。"]));
+  body.push(el("div",{style:"border-top:1px solid #e2e5ee;padding-top:16px;"},[
+    el("button",{style:ST.ghostBtn+"color:#ef4444;border-color:#fecaca;width:100%;justify-content:center;",onclick:function(){ if(confirm("すべてのデータを消して初期状態に戻します。よろしいですか？")){ try{localStorage.removeItem(STORAGE_KEY);}catch(e){} S.data=JSON.parse(JSON.stringify(initialData)); save(); closeModal(); } }},["すべてのデータをリセット"])
+  ]));
+  body.push(el("div",{style:"font-size:11px;color:#9ca3af;margin-top:12px;"},["入力した内容はこの端末に自動保存されます。"]));
+  S.modal=modalShell("設定", body); render();
+}
+function modalShell(title, bodyNodes){
+  var overlay=el("div",{style:"position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:flex-start;justify-content:center;padding:40px 12px;overflow:auto;z-index:1000;",
+    onclick:function(e){ if(e.target===overlay) closeModal(); }});
+  var box=el("div",{style:"background:#fff;border-radius:16px;padding:20px;max-width:440px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,0.2);"});
+  box.appendChild(el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"},[
+    el("div",{style:"font-size:18px;font-weight:700;color:#4f46e5;"},[title]),
+    el("button",{style:"background:none;border:none;font-size:22px;color:#9ca3af;cursor:pointer;",onclick:closeModal},["×"])
+  ]));
+  bodyNodes.forEach(function(n){ if(n) box.appendChild(n); });
+  overlay.appendChild(box);
+  return overlay;
+}
+function field(labelText, inputNode){
+  return el("div",{},[el("label",{style:ST.label},[labelText]), inputNode]);
+}
+// 時刻セレクト（5分刻み）
+function timeSelect(value, onChange){
+  var parts=(value||"00:00").split(":"), h=parts[0], m=parts[1];
+  var mins=[]; for(var i=0;i<12;i++) mins.push(pad(i*5));
+  var curMin=mins.indexOf(m)>=0?m:pad(Math.round(parseInt(m)/5)*5%60);
+  var selStyle="flex:1;min-width:0;background:#f5f6fa;border:1px solid #d8dcec;border-radius:8px;color:#1f2937;padding:8px 6px;font-size:15px;box-sizing:border-box;-webkit-appearance:none;appearance:none;text-align:center;";
+  var hSel=el("select",{style:selStyle,onchange:function(e){ onChange(e.target.value+":"+curMin); }});
+  for(var hh=0;hh<24;hh++){ var o=el("option",{value:pad(hh)},[pad(hh)]); if(pad(hh)===h)o.selected=true; hSel.appendChild(o); }
+  var mSel=el("select",{style:selStyle,onchange:function(e){ onChange(h+":"+e.target.value); }});
+  mins.forEach(function(mm){ var o=el("option",{value:mm},[mm]); if(mm===curMin)o.selected=true; mSel.appendChild(o); });
+  return el("div",{style:"display:flex;align-items:center;gap:4px;"},[hSel, el("span",{style:"font-weight:700;color:#6b7280;"},[":"]), mSel]);
+}
+
+// ── 日別詳細モーダル ──
+function openDayDetail(date){
+  var ds=sortDaySessions(S.data.sessions.filter(function(s){return s.date===date;}));
+  var ev=S.data.otherEvents.filter(function(e){return e.date===date;});
+  var d=new Date(date);
+  var title=(d.getMonth()+1)+"月"+d.getDate()+"日（"+dowJP(date)+"）";
+  var body=[];
+  if(ds.length===0&&ev.length===0) body.push(el("div",{style:"color:#9ca3af;text-align:center;padding:20px 0;"},["予定はありません"]));
+  var list=el("div",{style:"display:flex;flex-direction:column;gap:8px;margin-bottom:16px;"});
+  ds.forEach(function(s){
+    var info=sessionInfo(s), income=calcIncome(s);
+    list.appendChild(el("div",{style:"display:flex;align-items:center;gap:10px;background:#f5f6fa;border:1px solid #e2e5ee;border-radius:10px;padding:10px 12px;cursor:pointer;"+(s.deputized?"opacity:0.7;":""),onclick:function(){ openSessionEdit(s); }},[
+      el("div",{style:"width:8px;height:32px;border-radius:4px;background:"+(s.deputized?"#d1d5db":info.color)+";flex-shrink:0;"}),
+      el("div",{style:"flex:1;min-width:0;"},[
+        el("div",{style:"font-size:14px;font-weight:600;color:#1f2937;"},[info.name+(s.deputized?"（代理）":"")]),
+        el("div",{style:"font-size:12px;color:#6b7280;"},[s.startTime+"〜"+s.endTime+(s.note?" · "+s.note:"")])
+      ]),
+      (!s.deputized&&income>0)?el("span",{style:"font-size:13px;color:#059669;font-weight:600;"},["¥"+income.toLocaleString()]):null,
+      el("span",{style:"color:#9ca3af;font-size:16px;"},["✎"])
+    ]));
+  });
+  ev.forEach(function(e){
+    list.appendChild(el("div",{style:"display:flex;align-items:center;gap:10px;background:#f5f6fa;border:1px solid #e2e5ee;border-radius:10px;padding:10px 12px;cursor:pointer;",onclick:function(){ openEventEdit(e); }},[
+      el("div",{style:"width:8px;height:32px;border-radius:4px;background:"+e.color+";flex-shrink:0;"}),
+      el("div",{style:"flex:1;min-width:0;"},[el("div",{style:"font-size:14px;font-weight:600;color:#1f2937;"},[e.title]), el("div",{style:"font-size:12px;color:"+e.color+";"},[e.category])]),
+      el("span",{style:"color:#9ca3af;font-size:16px;"},["✎"])
+    ]));
+  });
+  body.push(list);
+
+  // バイト不可情報の表示
+  var unav=unavailFor(date);
+  if(unav.length){
+    var uwrap=el("div",{style:"display:flex;flex-direction:column;gap:6px;margin-bottom:12px;"});
+    unav.forEach(function(u){
+      var bg = u.allDay?"#fef2f2":"#fffbeb", bc = u.allDay?"#fecaca":"#fde68a", col=u.allDay?"#b91c1c":"#d97706";
+      var labelTxt = u.allDay ? "終日バイト不可" : ("バイト不可 "+(u.startTime||"")+"〜"+(u.endTime||""));
+      uwrap.appendChild(el("div",{style:"display:flex;align-items:center;gap:8px;background:"+bg+";border:1px solid "+bc+";border-radius:10px;padding:8px 12px;"},[
+        el("div",{style:"flex:1;min-width:0;"},[
+          el("div",{style:"font-size:13px;font-weight:700;color:"+col+";"},[labelTxt]),
+          u.reason?el("div",{style:"font-size:12px;color:#6b7280;"},[u.reason]):null
+        ]),
+        el("button",{style:"background:none;border:none;color:#ef4444;font-size:16px;cursor:pointer;",onclick:function(){ S.data.unavailable=S.data.unavailable.filter(function(x){return x!==u;}); save(); openDayDetail(date); }},["×"])
+      ]));
+    });
+    body.push(uwrap);
+  }
+
+  body.push(el("div",{style:"display:flex;flex-direction:column;gap:8px;"},[
+    el("button",{style:ST.addBtn+"width:100%;justify-content:center;",onclick:function(){ openSessionEdit(null, date); }},["+ 授業・業務を追加"]),
+    el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;",onclick:function(){ openEventEdit(null, date); }},["+ その他の予定を追加"]),
+    el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;color:#d97706;border-color:#fde68a;",onclick:function(){ openUnavailEdit(date); }},["⛔ バイト不可を設定"])
+  ]));
+  S.modal=modalShell(title, body); render();
+}
+
+// バイト不可の設定モーダル
+function openUnavailEdit(date){
+  var v={ date:date, allDay:true, startTime:"16:00", endTime:"22:00", reason:"" };
+  function build(){
+    var body=[];
+    // 終日 / 時間帯 切替
+    var modeRow=el("div",{style:"display:flex;gap:8px;margin-bottom:12px;"});
+    [[true,"終日不可（赤）"],[false,"時間帯のみ（黄）"]].forEach(function(t){
+      modeRow.appendChild(el("button",{style:"flex:1;padding:10px;border-radius:8px;border:1px solid #d8dcec;cursor:pointer;font-size:13px;font-weight:600;background:"+(v.allDay===t[0]?(t[0]?"#fef2f2":"#fffbeb"):"#fff")+";color:"+(v.allDay===t[0]?(t[0]?"#b91c1c":"#d97706"):"#6b7280")+";",onclick:function(){ v.allDay=t[0]; build(); }},[t[1]]));
+    });
+    body.push(modeRow);
+    if(!v.allDay){
+      body.push(el("div",{style:"display:flex;gap:10px;"},[
+        el("div",{style:"flex:1;min-width:0;"},[el("label",{style:ST.label},["不可 開始"]), el("div",{style:"margin-top:4px;margin-bottom:12px;"},[timeSelect(v.startTime,function(val){v.startTime=val;})])]),
+        el("div",{style:"flex:1;min-width:0;"},[el("label",{style:ST.label},["不可 終了"]), el("div",{style:"margin-top:4px;margin-bottom:12px;"},[timeSelect(v.endTime,function(val){v.endTime=val;})])])
+      ]));
+    }
+    body.push(field("理由（任意）", el("input",{value:v.reason,style:ST.input,placeholder:"例: 部活の試合、家の用事など",oninput:function(e){ v.reason=e.target.value; }})));
+    body.push(el("button",{style:ST.addBtn+"width:100%;justify-content:center;",onclick:function(){
+      S.data.unavailable.push({ date:v.date, allDay:v.allDay, startTime:v.allDay?"":v.startTime, endTime:v.allDay?"":v.endTime, reason:v.reason||"" });
+      save(); openDayDetail(date);
+    }},["設定する"]));
+    var d=new Date(date);
+    S.modal=modalShell((d.getMonth()+1)+"月"+d.getDate()+"日 バイト不可", body); render();
+  }
+  build();
+}
+
+// ── 授業 追加/編集 ──
+function openSessionEdit(session, presetDate){
+  var isNew=!session;
+  var v=session?Object.assign({subType:"outside"},session):{ id:null, studentId:"", date:presetDate||todayStr(), startTime:"16:00", endTime:"17:30", deputized:false, note:"", kind:"tutor", subType:"outside", fixedAmount:0 };
+  if(v.studentId==null) v.studentId="";
+  function build(){
+    var body=[];
+    var kinds=[["tutor","授業"],["ta","TA"],["fixed","固定報酬"],["meeting","面談"]];
+    var kindRow=el("div",{style:"display:flex;gap:6px;margin-bottom:12px;"});
+    kinds.forEach(function(k){
+      kindRow.appendChild(el("button",{style:"flex:1;padding:8px 4px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:"+(v.kind===k[0]?"#4f46e5":"#eef0f7")+";color:"+(v.kind===k[0]?"#fff":"#64748b")+";",onclick:function(){ v.kind=k[0]; build(); }},[k[1]]));
+    });
+    body.push(kindRow);
+    if(v.kind==="tutor"){
+      var sel=el("select",{style:ST.input,onchange:function(e){ v.studentId=e.target.value; build(); }});
+      var optDep=el("option",{value:""},["代理で入る（自分が教える）"]); if(v.studentId==="")optDep.selected=true; sel.appendChild(optDep);
+      S.data.students.filter(function(s){return !s.retired;}).forEach(function(s){ var o=el("option",{value:String(s.id)},[s.name]); if(String(v.studentId)===String(s.id))o.selected=true; sel.appendChild(o); });
+      body.push(field("生徒", sel));
+      if(v.studentId===""){
+        body.push(el("div",{style:"font-size:11px;color:#059669;margin-bottom:8px;"},["他の先生の代わりに自分が教えるコマです（給料が入ります）。"]));
+        body.push(field("生徒名（担当する生徒）", el("input",{value:v.depName||"",style:ST.input,placeholder:"例: 山田さん",oninput:function(e){ v.depName=e.target.value; }})));
+        var subRow=el("div",{style:"display:flex;gap:8px;margin-bottom:12px;"});
+        [["outside","塾外"],["inside","塾内"]].forEach(function(t){
+          subRow.appendChild(el("button",{style:"flex:1;padding:8px;border-radius:8px;border:1px solid #d8dcec;cursor:pointer;background:"+((v.subType||"outside")===t[0]?"#e0e7ff":"#fff")+";color:#1f2937;",onclick:function(){ v.subType=t[0]; build(); }},[t[1]]));
+        });
+        body.push(el("div",{},[el("label",{style:ST.label},["区分（給料計算用）"]), subRow]));
+      }
+    }
+    body.push(field("日付", el("input",{type:"date",value:v.date,style:ST.input,onchange:function(e){ v.date=e.target.value; }})));
+    if(v.kind!=="fixed"){
+      body.push(el("div",{style:"display:flex;gap:10px;"},[
+        el("div",{style:"flex:1;min-width:0;"},[el("label",{style:ST.label},["開始"]), el("div",{style:"margin-top:4px;margin-bottom:12px;"},[timeSelect(v.startTime,function(val){v.startTime=val;})])]),
+        el("div",{style:"flex:1;min-width:0;"},[el("label",{style:ST.label},["終了"]), el("div",{style:"margin-top:4px;margin-bottom:12px;"},[timeSelect(v.endTime,function(val){v.endTime=val;})])])
+      ]));
+    }
+    if(v.kind==="fixed") body.push(field("金額（円）", el("input",{type:"number",value:v.fixedAmount||"",style:ST.input,oninput:function(e){ v.fixedAmount=parseInt(e.target.value)||0; }})));
+    body.push(field("メモ", el("input",{value:v.note||"",style:ST.input,placeholder:"科目など",oninput:function(e){ v.note=e.target.value; }})));
+    if(v.kind==="tutor" && v.studentId!==""){
+      var depWrap=el("label",{style:"display:flex;align-items:center;gap:8px;margin-bottom:12px;cursor:pointer;"},[
+        el("input",{type:"checkbox",onchange:function(e){ v.deputized=e.target.checked; }}),
+        el("span",{style:"font-size:13px;color:#1f2937;"},["この授業を他の先生に代わってもらう（自分は教えない・収入0）"])
+      ]);
+      if(v.deputized) depWrap.querySelector("input").checked=true;
+      body.push(depWrap);
+    }
+    body.push(el("button",{style:ST.addBtn+"width:100%;justify-content:center;margin-top:4px;",onclick:function(){ saveSession(v, isNew); }},[isNew?"追加する":"保存する"]));
+    if(!isNew) body.push(el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;margin-top:8px;color:#ef4444;border-color:#fecaca;",onclick:function(){ if(confirm("この授業を削除しますか？")){ S.data.sessions=S.data.sessions.filter(function(x){return x.id!==v.id;}); save(); closeModal(); } }},["この授業を削除"]));
+    S.modal=modalShell(isNew?"授業・業務を追加":"授業・業務を編集", body); render();
+  }
+  build();
+}
+
+function saveSession(v, isNew){
+  // 自分が代理で入る（生徒名を自由入力／自分が教える→給料あり・通常表示）
+  var isCovering = (v.kind==="tutor" && (v.studentId===""||v.studentId==null));
+  var rate;
+  if(v.kind==="ta") rate=RATE_TA;
+  else if(v.kind==="fixed") rate=0;
+  else if(v.kind==="meeting") rate=0;
+  else if(isCovering){ rate=(v.subType==="inside")?RATE_INSIDE:RATE_OUTSIDE; }
+  else { rate=getRate(studentById(parseInt(v.studentId))); }
+  var rec={
+    id: isNew?newId(S.data.sessions):v.id,
+    studentId: (v.kind==="tutor" && v.studentId!=="" && v.studentId!=null)?parseInt(v.studentId):null,
+    date:v.date, startTime:v.startTime, endTime:v.endTime,
+    // 「代わってもらう」= 生徒ありでチェックを入れたときだけ給料0・薄色。
+    // 「自分が代理で入る」(生徒なし) は自分が教えるので給料あり・通常表示。
+    deputized: (v.kind==="tutor" && !isCovering) ? !!v.deputized : false,
+    depName: isCovering ? (v.depName||"") : "",
+    subType: isCovering ? (v.subType||"outside") : undefined,
+    note:v.note||"", kind:v.kind, snapshotRate:rate, fixedAmount:v.fixedAmount||0
+  };
+  if(isNew) S.data.sessions.push(rec);
+  else S.data.sessions=S.data.sessions.map(function(x){return x.id===rec.id?rec:x;});
+  save(); closeModal();
+}
+
+// ── 生徒 追加/編集 ──
+function openStudentEdit(student){
+  var isNew=!student;
+  var palette=["#6366f1","#8b5cf6","#ec4899","#f59e0b","#10b981","#3b82f6","#ef4444","#f97316","#14b8a6","#a855f7"];
+  var v=student?Object.assign({},student):{ id:null, name:"", type:"outside", color:palette[0], leader:false, leaderUntil:"", retired:false, retiredDate:"" };
+  function build(){
+    var body=[];
+    body.push(field("名前", el("input",{value:v.name,style:ST.input,placeholder:"生徒名",oninput:function(e){ v.name=e.target.value; }})));
+    var typeRow=el("div",{style:"display:flex;gap:8px;margin-bottom:12px;"});
+    [["outside","塾外 (¥3,750/h)"],["inside","塾内 (¥3,000/h)"]].forEach(function(t){
+      typeRow.appendChild(el("button",{style:"flex:1;padding:8px;border-radius:8px;border:1px solid #d8dcec;cursor:pointer;font-size:13px;background:"+(v.type===t[0]?"#e0e7ff":"#fff")+";color:#1f2937;",onclick:function(){ v.type=t[0]; reopen(); }},[t[1]]));
+    });
+    body.push(el("div",{},[el("label",{style:ST.label},["区分"]), typeRow]));
+    // 色
+    var colorRow=el("div",{style:"display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;"});
+    palette.forEach(function(c){
+      colorRow.appendChild(el("button",{style:"width:28px;height:28px;border-radius:50%;border:"+(v.color===c?"3px solid #1f2937":"2px solid #fff")+";background:"+c+";cursor:pointer;",onclick:function(){ v.color=c; reopen(); }}));
+    });
+    body.push(el("div",{},[el("label",{style:ST.label},["色"]), colorRow]));
+    // リーダー
+    var leadWrap=el("label",{style:"display:flex;align-items:center;gap:10px;margin-bottom:12px;cursor:pointer;"},[
+      el("input",{type:"checkbox",onchange:function(e){ v.leader=e.target.checked; reopen(); }}),
+      el("div",{},[el("div",{style:"font-size:13px;font-weight:600;color:#1f2937;"},["この生徒のリーダー"]), el("div",{style:"font-size:11px;color:#6b7280;"},["ON のとき1コマ¥100の調整料が発生"])])
+    ]);
+    if(v.leader) leadWrap.querySelector("input").checked=true;
+    body.push(leadWrap);
+    if(v.leader) body.push(field("リーダー終了月（任意）", el("input",{type:"month",value:v.leaderUntil||"",style:ST.input,onchange:function(e){ v.leaderUntil=e.target.value; }})));
+    // 退塾
+    var retWrap=el("div",{style:"background:"+(v.retired?"#fef2f2":"#f5f6fa")+";border:1px solid "+(v.retired?"#fecaca":"#d8dcec")+";border-radius:10px;padding:10px 12px;margin-bottom:16px;"});
+    var retToggle=el("div",{style:"display:flex;align-items:center;gap:10px;cursor:pointer;",onclick:function(){ v.retired=!v.retired; reopen(); }},[
+      el("div",{style:"width:40px;height:22px;border-radius:11px;background:"+(v.retired?"#ef4444":"#cbd5e1")+";position:relative;flex-shrink:0;"},[el("div",{style:"width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:2px;left:"+(v.retired?"20px":"2px")+";"})]),
+      el("div",{},[el("div",{style:"font-size:13px;font-weight:600;color:#1f2937;"},["退塾した"]), el("div",{style:"font-size:11px;color:#6b7280;"},["在籍リストから外れます（過去データは残ります）"])])
+    ]);
+    retWrap.appendChild(retToggle);
+    if(v.retired) retWrap.appendChild(el("div",{style:"margin-top:10px;"},[el("label",{style:ST.label},["退塾日（任意）"]), el("input",{type:"date",value:v.retiredDate||"",style:ST.input+"margin-bottom:0;",onchange:function(e){ v.retiredDate=e.target.value; }})]));
+    body.push(retWrap);
+    body.push(el("button",{style:ST.addBtn+"width:100%;justify-content:center;",onclick:function(){
+      if(!v.name.trim()){ alert("名前を入力してください"); return; }
+      if(isNew){ v.id=newId(S.data.students); S.data.students.push(v); }
+      else S.data.students=S.data.students.map(function(x){return x.id===v.id?v:x;});
+      save(); closeModal();
+    }},[isNew?"追加する":"保存する"]));
+    S.modal=modalShell(isNew?"生徒を追加":"生徒を編集", body); render();
+  }
+  function reopen(){ build(); }
+  build();
+}
+
+// ── 予定（その他）追加/編集 ──
+function openEventEdit(event, presetDate){
+  var isNew=!event;
+  var colorMap={ "部活":"#f97316","試験":"#ef4444","学校行事":"#8b5cf6","面談":"#14b8a6","その他":"#6b7280" };
+  var v=event?Object.assign({},event):{ id:null, date:presetDate||todayStr(), title:"", category:"部活", color:"#f97316" };
+  var body=[];
+  body.push(field("タイトル", el("input",{value:v.title,style:ST.input,placeholder:"例: バスケ部練習",oninput:function(e){ v.title=e.target.value; }})));
+  body.push(field("日付", el("input",{type:"date",value:v.date,style:ST.input,onchange:function(e){ v.date=e.target.value; }})));
+  var catSel=el("select",{style:ST.input,onchange:function(e){ v.category=e.target.value; v.color=colorMap[e.target.value]||v.color; }});
+  ["部活","試験","学校行事","面談","その他"].forEach(function(c){ var o=el("option",{value:c},[c]); if(v.category===c)o.selected=true; catSel.appendChild(o); });
+  body.push(field("カテゴリ", catSel));
+  body.push(el("button",{style:ST.addBtn+"width:100%;justify-content:center;",onclick:function(){
+    if(!v.title.trim()){ alert("タイトルを入力してください"); return; }
+    if(isNew){ v.id=newId(S.data.otherEvents); S.data.otherEvents.push(v); }
+    else S.data.otherEvents=S.data.otherEvents.map(function(x){return x.id===v.id?v:x;});
+    save(); closeModal();
+  }},[isNew?"追加する":"保存する"]));
+  if(!isNew) body.push(el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;margin-top:8px;color:#ef4444;border-color:#fecaca;",onclick:function(){ if(confirm("この予定を削除しますか？")){ S.data.otherEvents=S.data.otherEvents.filter(function(x){return x.id!==v.id;}); save(); closeModal(); } }},["この予定を削除"]));
+  S.modal=modalShell(isNew?"予定を追加":"予定を編集", body); render();
+}
+
+// ── 収入手動入力 ──
+function openIncomeEdit(y,m,cur){
+  var val=String(cur);
+  var body=[
+    field("金額（円）", el("input",{type:"number",value:val,style:ST.input,oninput:function(e){ val=e.target.value; }})),
+    el("div",{style:"font-size:11px;color:#9ca3af;margin-bottom:16px;"},["入力するとこの月は手動の金額で表示されます（自動計算より優先）。"]),
+    el("button",{style:ST.addBtn+"width:100%;justify-content:center;",onclick:function(){ var n=parseInt(val); S.data.manualIncome[monthKey(y,m)]=isNaN(n)?0:n; save(); closeModal(); }},["保存する"])
+  ];
+  S.modal=modalShell(y+"年 "+m+"月の授業収入", body); render();
+}
+
+// 受け取った額（手取り）入力。勤務月(y,m)の手取りは「翌月＝支給月」のキーで保存
+function openNetEdit(y,m,cur){
+  var val=cur!=null?String(cur):"";
+  var p=payMonthOf(y,m);
+  var body=[
+    field("受け取った額（手取り・円）", el("input",{type:"number",value:val,style:ST.input,placeholder:"例: 180000",oninput:function(e){ val=e.target.value; }})),
+    el("div",{style:"font-size:11px;color:#9ca3af;margin-bottom:16px;line-height:1.6;"},[m+"月に働いた分は"+p.year+"年"+p.month+"月に振り込まれます。給与明細を見て、実際の手取り額（税・保険料を引いた後）を入力してください。この額は"+p.year+"年の手取りとして集計されます。"]),
+    el("button",{style:ST.addBtn+"width:100%;justify-content:center;",onclick:function(){
+      var k=monthKey(p.year,p.month);
+      if(val===""){ delete S.data.manualNet[k]; }
+      else { var n=parseInt(val); S.data.manualNet[k]=isNaN(n)?0:n; }
+      save(); closeModal();
+    }},["保存する"])
+  ];
+  S.modal=modalShell(y+"年 "+m+"月 受け取った額", body); render();
+}
+function openRequestEdit(request){
+  var isNew=!request;
+  var v=request?JSON.parse(JSON.stringify(request)):{ id:null, studentName:"", candidateDates:[], note:"", slots:[{status:"open",confirmedDate:""}] };
+  v.candidateDates=(v.candidateDates||[]).map(function(c){ return typeof c==="string"?{date:c,memo:""}:c; });
+  var pickerMonth={ year:S.currentMonth.year, month:S.currentMonth.month };
+  function build(){
+    var body=[];
+    body.push(field("生徒名", el("input",{value:v.studentName,style:ST.input,placeholder:"例: 佐藤さん",oninput:function(e){ v.studentName=e.target.value; }})));
+    // ミニカレンダー
+    body.push(el("label",{style:ST.label},["候補日（タップで選択／取り消し）"]));
+    var firstDay=new Date(pickerMonth.year,pickerMonth.month-1,1).getDay();
+    var off=firstDay===0?6:firstDay-1, dim=new Date(pickerMonth.year,pickerMonth.month,0).getDate();
+    var cells=[]; for(var i=0;i<off;i++) cells.push(null);
+    for(var d=1;d<=dim;d++) cells.push(d);
+    while(cells.length%7!==0) cells.push(null);
+    var selDates=v.candidateDates.map(function(c){return c.date;});
+    var cal=el("div",{style:"background:#f5f6fa;border:1px solid #d8dcec;border-radius:10px;padding:10px;margin-top:4px;margin-bottom:12px;"});
+    cal.appendChild(el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"},[
+      el("button",{style:ST.navBtn+"width:28px;height:28px;font-size:16px;",onclick:function(){ pickerMonth.month--; if(pickerMonth.month<1){pickerMonth.month=12;pickerMonth.year--;} build(); }},["‹"]),
+      el("span",{style:"font-size:13px;font-weight:700;color:#1e3a8a;"},[pickerMonth.year+"年 "+pickerMonth.month+"月"]),
+      el("button",{style:ST.navBtn+"width:28px;height:28px;font-size:16px;",onclick:function(){ pickerMonth.month++; if(pickerMonth.month>12){pickerMonth.month=1;pickerMonth.year++;} build(); }},["›"])
+    ]));
+    var dowg=el("div",{style:"display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:2px;"});
+    DAYS.forEach(function(dd){ dowg.appendChild(el("div",{style:"text-align:center;font-size:10px;color:#9ca3af;font-weight:700;"},[dd])); });
+    cal.appendChild(dowg);
+    var cg=el("div",{style:"display:grid;grid-template-columns:repeat(7,1fr);gap:2px;"});
+    cells.forEach(function(day){
+      if(!day){ cg.appendChild(el("div",{})); return; }
+      var ds=pickerMonth.year+"-"+pad(pickerMonth.month)+"-"+pad(day);
+      var selected=selDates.indexOf(ds)>=0;
+      cg.appendChild(el("button",{style:"aspect-ratio:1;border:none;border-radius:8px;cursor:pointer;font-size:13px;font-weight:"+(selected?"700":"400")+";background:"+(selected?"#4f46e5":"#fff")+";color:"+(selected?"#fff":"#1f2937")+";",
+        onclick:function(){
+          if(selected) v.candidateDates=v.candidateDates.filter(function(c){return c.date!==ds;});
+          else { v.candidateDates.push({date:ds,memo:""}); v.candidateDates.sort(function(a,b){return a.date.localeCompare(b.date);}); }
+          build();
+        }},[String(day)]));
+    });
+    cal.appendChild(cg);
+    body.push(cal);
+    // 選択済み＋メモ
+    if(v.candidateDates.length){
+      var dl=el("div",{style:"display:flex;flex-direction:column;gap:6px;margin-bottom:12px;"});
+      v.candidateDates.forEach(function(c){
+        dl.appendChild(el("div",{style:"display:flex;align-items:center;gap:8px;background:#f5f6fa;border-radius:10px;padding:8px 10px;"},[
+          el("span",{style:"font-size:13px;font-weight:700;color:#4f46e5;min-width:64px;"},[mmdd(c.date)+"（"+dowJP(c.date)+"）"]),
+          el("input",{value:c.memo,placeholder:"時間帯メモ（例: 16時〜）",style:"flex:1;min-width:0;background:#fff;border:1px solid #d8dcec;border-radius:8px;color:#1f2937;padding:6px 10px;font-size:13px;box-sizing:border-box;",oninput:function(e){ c.memo=e.target.value; }}),
+          el("button",{style:"background:none;border:none;color:#ef4444;font-size:16px;cursor:pointer;",onclick:function(){ v.candidateDates=v.candidateDates.filter(function(x){return x.date!==c.date;}); build(); }},["×"])
+        ]));
+      });
+      body.push(dl);
+    }
+    // コマ
+    var slotHead=el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"},[
+      el("span",{style:"font-size:13px;font-weight:700;color:#1f2937;"},["コマ ("+v.slots.length+")"]),
+      el("button",{style:ST.ghostBtn+"padding:5px 12px;font-size:12px;",onclick:function(){ v.slots.push({status:"open",confirmedDate:""}); build(); }},["+ コマを追加"])
+    ]);
+    body.push(slotHead);
+    v.slots.forEach(function(slot,idx){
+      var sc=el("div",{style:"background:#f5f6fa;border-radius:10px;padding:10px;margin-bottom:8px;"});
+      sc.appendChild(el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"},[
+        el("span",{style:"font-size:13px;font-weight:700;color:#1f2937;"},["コマ"+(idx+1)]),
+        v.slots.length>1?el("button",{style:"background:none;border:none;color:#ef4444;font-size:13px;cursor:pointer;",onclick:function(){ v.slots.splice(idx,1); build(); }},["削除"]):null
+      ]));
+      var stRow=el("div",{style:"display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;"});
+      Object.keys(REQUEST_STATUS).forEach(function(key){
+        var st=REQUEST_STATUS[key];
+        stRow.appendChild(el("button",{style:"padding:5px 10px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:"+(slot.status===key?st.color:"#e5e7eb")+";color:"+(slot.status===key?"#fff":"#6b7280")+";",onclick:function(){ slot.status=key; build(); }},[st.label]));
+      });
+      sc.appendChild(stRow);
+      sc.appendChild(el("label",{style:ST.label},["確定日（任意）"]));
+      sc.appendChild(el("input",{type:"date",value:slot.confirmedDate||"",style:ST.input,onchange:function(e){ slot.confirmedDate=e.target.value; }}));
+      sc.appendChild(el("label",{style:ST.label},["確定時間（任意）"]));
+      sc.appendChild(el("div",{style:"display:flex;align-items:center;gap:8px;margin-top:4px;"},[
+        el("div",{style:"flex:1;min-width:0;"},[timeSelect(slot.startTime||"16:00",function(val){slot.startTime=val;})]),
+        el("span",{style:"color:#6b7280;"},["〜"]),
+        el("div",{style:"flex:1;min-width:0;"},[timeSelect(slot.endTime||"17:30",function(val){slot.endTime=val;})])
+      ]));
+      body.push(sc);
+    });
+    body.push(field("メモ", el("input",{value:v.note,style:ST.input,placeholder:"科目・希望時間帯など",oninput:function(e){ v.note=e.target.value; }})));
+    body.push(el("button",{style:ST.addBtn+"width:100%;justify-content:center;margin-top:4px;",onclick:function(){
+      if(isNew){ v.id=newId(S.data.requests); S.data.requests.push(v); }
+      else S.data.requests=S.data.requests.map(function(x){return x.id===v.id?v:x;});
+      save(); closeModal();
+    }},[isNew?"追加する":"保存する"]));
+    S.modal=modalShell(isNew?"依頼を追加":"依頼を編集", body); render();
+  }
+  build();
+}
+
+// ── バックアップ ──
+function exportData(){
+  var data=Object.assign({}, S.data, { exportedAt:new Date().toISOString() });
+  var json=JSON.stringify(data,null,2);
+  var blob=new Blob([json],{type:"application/json"});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement("a");
+  a.href=url; a.download="スケジューラーバックアップ_"+todayStr()+".json";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+function loadBackup(file){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    try{
+      var data=JSON.parse(e.target.result);
+      if(!data||!Array.isArray(data.sessions)){ alert("このファイルは読み込めませんでした（形式が違います）。"); return; }
+      if(confirm("現在のデータを、このファイルの内容で置き換えます。よろしいですか？")){
+        S.data={ sessions:data.sessions||[], students:data.students||[], otherEvents:data.otherEvents||[], requests:data.requests||[], manualIncome:data.manualIncome||{}, manualNet:data.manualNet||{}, unavailable:data.unavailable||[] };
+        save(); render(); alert("読み込みが完了しました。");
+      }
+    }catch(err){ alert("ファイルの読み込みに失敗しました。"); }
+  };
+  reader.readAsText(file);
+}
+
+// ── 起動 ──
+function boot(){
+  S.data=load();
+  render();
+}
+if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", boot);
+else boot();
+
+</script>
+</body>
+</html>
