@@ -652,10 +652,14 @@ function timeSelect(value, onChange){
   var mins=[]; for(var i=0;i<12;i++) mins.push(pad(i*5));
   var curMin=mins.indexOf(m)>=0?m:pad(Math.round(parseInt(m)/5)*5%60);
   var selStyle="flex:1;min-width:0;background:#f5f6fa;border:1px solid #d8dcec;border-radius:8px;color:#1f2937;padding:8px 6px;font-size:15px;box-sizing:border-box;-webkit-appearance:none;appearance:none;text-align:center;";
-  var hSel=el("select",{style:selStyle,onchange:function(e){ onChange(e.target.value+":"+curMin); }});
+  var hSel=el("select",{style:selStyle});
   for(var hh=0;hh<24;hh++){ var o=el("option",{value:pad(hh)},[pad(hh)]); if(pad(hh)===h)o.selected=true; hSel.appendChild(o); }
-  var mSel=el("select",{style:selStyle,onchange:function(e){ onChange(h+":"+e.target.value); }});
+  var mSel=el("select",{style:selStyle});
   mins.forEach(function(mm){ var o=el("option",{value:mm},[mm]); if(mm===curMin)o.selected=true; mSel.appendChild(o); });
+  // 変更時は両方のselectの「今の値」を読んで通知（古い値の固定参照によるバグを防ぐ）
+  function fire(){ onChange(hSel.value+":"+mSel.value); }
+  hSel.addEventListener("change", fire);
+  mSel.addEventListener("change", fire);
   return el("div",{style:"display:flex;align-items:center;gap:4px;"},[hSel, el("span",{style:"font-weight:700;color:#6b7280;"},[":"]), mSel]);
 }
 
