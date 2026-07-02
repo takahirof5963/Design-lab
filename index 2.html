@@ -56,7 +56,9 @@ var initialData = {
   ],
   manualIncome: {},
   manualNet: {},
-  unavailable: []
+  unavailable: [],
+  templates: [],
+  lastBackup: null
 };
 
 // ── 状態 ──
@@ -102,7 +104,9 @@ function load(){
       otherEvents: p.otherEvents||[], requests: p.requests||[],
       manualIncome: p.manualIncome||{},
       manualNet: p.manualNet||{},
-      unavailable: p.unavailable||[]
+      unavailable: p.unavailable||[],
+      templates: p.templates||[],
+      lastBackup: p.lastBackup||null
     };
   }catch(e){ return JSON.parse(JSON.stringify(initialData)); }
 }
@@ -206,6 +210,13 @@ function dayAvailStatus(date){
   return "partial";
 }
 
+// バックアップが2週間以上前（または一度もない）ならtrue
+function backupOverdue(){
+  if(!S.data || !S.data.lastBackup) return true;
+  var last=new Date(S.data.lastBackup).getTime();
+  return (Date.now()-last) > 14*24*60*60*1000;
+}
+
 /* ===== 描画・UI ===== */
 
 // 共通スタイル文字列
@@ -251,6 +262,9 @@ function attachSwipe(node, onPrev, onNext){
 function header(){
   var logo=el("img",{src:window.LOGO_SRC,alt:"中学受験デザインラボ",style:"height:44px;width:auto;display:block;"});
   var gearBtn=el("button",{style:"position:absolute;right:0;top:50%;transform:translateY(-50%);background:#f5f6fa;border:1px solid #d8dcec;border-radius:10px;width:40px;height:40px;font-size:20px;cursor:pointer;line-height:1;",onclick:openSettings},["⚙"]);
+  if(backupOverdue()){
+    gearBtn.appendChild(el("span",{style:"position:absolute;top:-4px;right:-4px;width:12px;height:12px;border-radius:50%;background:#ef4444;border:2px solid #fff;"}));
+  }
   var logoWrap=el("div",{style:"position:relative;display:flex;justify-content:center;align-items:center;margin-bottom:12px;min-height:44px;"},[logo, gearBtn]);
   var tabs=el("div",{style:"display:flex;gap:6px;"});
   var labels={week:"週",month:"月",requests:"依頼",students:"生徒",income:"収入"};
@@ -276,7 +290,10 @@ function viewWeek(){
   var wd=weekDates(S.currentWeek);
   var head=el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"},[
     el("button",{style:ST.navBtn,onclick:function(){ shiftWeek(-7); }},["‹"]),
-    el("div",{style:"font-size:15px;font-weight:600;color:#4f46e5;"},[mmdd(wd[0])+" 〜 "+mmdd(wd[6])]),
+    el("div",{style:"display:flex;align-items:center;gap:8px;"},[
+      el("div",{style:"font-size:15px;font-weight:600;color:#4f46e5;"},[mmdd(wd[0])+" 〜 "+mmdd(wd[6])]),
+      el("button",{style:"background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;color:#4f46e5;font-size:12px;font-weight:700;padding:6px 10px;cursor:pointer;",onclick:goToday},["今日"])
+    ]),
     el("button",{style:ST.navBtn,onclick:function(){ shiftWeek(7); }},["›"])
   ]);
   var grid=el("div",{style:"display:flex;flex-direction:column;gap:8px;"});
@@ -329,49 +346,89 @@ function shiftWeek(days){ var d=new Date(S.currentWeek); d.setDate(d.getDate()+d
 // ── 月ビュー ──
 function viewMonth(){
   var y=S.currentMonth.year, m=S.currentMonth.month;
-  var head=el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"},[
+  var head=el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"},[
     el("button",{style:ST.navBtn,onclick:function(){ shiftMonth(-1); }},["‹"]),
-    el("div",{style:"font-size:16px;font-weight:700;color:#4f46e5;"},[y+"年 "+m+"月"]),
+    el("div",{style:"display:flex;align-items:center;gap:8px;"},[
+      el("div",{style:"font-size:16px;font-weight:700;color:#4f46e5;"},[y+"年 "+m+"月〜"]),
+      el("button",{style:"background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;color:#4f46e5;font-size:12px;font-weight:700;padding:6px 10px;cursor:pointer;",onclick:goToday},["今日"])
+    ]),
     el("button",{style:ST.navBtn,onclick:function(){ shiftMonth(1); }},["›"])
   ]);
-  var dow=el("div",{style:"display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;"});
+  var dow=el("div",{style:"display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;position:sticky;top:0;background:#f5f6fa;z-index:5;padding:4px 0;"});
   DAYS.forEach(function(d){ dow.appendChild(el("div",{style:"text-align:center;font-size:11px;color:#9ca3af;font-weight:700;"},[d])); });
-  var firstDay=new Date(y,m-1,1).getDay();
-  var off=firstDay===0?6:firstDay-1;
-  var dim=new Date(y,m,0).getDate();
-  var cells=[]; for(var i=0;i<off;i++) cells.push(null);
-  for(var d=1;d<=dim;d++) cells.push(d);
-  while(cells.length%7!==0) cells.push(null);
-  var grid=el("div",{style:"display:grid;grid-template-columns:repeat(7,1fr);gap:4px;"});
-  cells.forEach(function(day){
-    if(!day){ grid.appendChild(el("div",{})); return; }
-    var dateStr=y+"-"+pad(m)+"-"+pad(day);
-    var isToday=dateStr===todayStr();
-    var avail=dayAvailStatus(dateStr);
-    var ds=sortDaySessions(S.data.sessions.filter(function(s){return s.date===dateStr;}));
-    var ev=S.data.otherEvents.filter(function(e){return e.date===dateStr;});
-    var borderColor = avail==="full"?"#ef4444":(avail==="partial"?"#f59e0b":(isToday?"#6366f1":"#e2e5ee"));
-    var borderWidth = avail?"2px":"1px";
-    var bgColor = avail==="full"?"#fef2f2":(avail==="partial"?"#fffbeb":(isToday?"#eef2ff":"#fff"));
-    var cell=el("div",{
-      style:"background:"+bgColor+";border:"+borderWidth+" solid "+borderColor+";border-radius:8px;padding:5px 4px;min-height:80px;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0;overflow:hidden;",
-      onclick:function(){ openDayDetail(dateStr); }
-    });
-    cell.appendChild(el("div",{style:"font-size:12px;font-weight:700;text-align:center;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 2px;"+(isToday?"color:#fff;background:#6366f1;":"color:#6b7280;")},[String(day)]));
-    ds.forEach(function(s){
-      var info=sessionInfo(s);
-      cell.appendChild(el("div",{style:"background:"+(s.deputized?"#fafafa":info.color+"35")+";border-left:3px solid "+(s.deputized?"#d1d5db":info.color)+";border-radius:0 3px 3px 0;padding:2px 3px;opacity:"+(s.deputized?"0.55":"1")+";"},[
-        el("div",{style:"font-size:9px;font-weight:"+(s.deputized?"400":"600")+";color:"+(s.deputized?"#9ca3af":"#1f2937")+";overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"},[info.name])
-      ]));
-    });
-    ev.forEach(function(e){
-      cell.appendChild(el("div",{style:"background:"+e.color+"25;border-left:3px solid "+e.color+";border-radius:0 3px 3px 0;padding:2px 3px;"},[
-        el("div",{style:"font-size:9px;color:"+e.color+";font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"},[e.title])
-      ]));
-    });
-    grid.appendChild(cell);
+
+  // 連続表示: 表示開始月の1日を含む週の月曜〜 3ヶ月後の月末を含む週の日曜まで
+  var startD=new Date(y, m-1, 1);
+  var sdow=startD.getDay(); startD.setDate(startD.getDate() - (sdow===0?6:sdow-1)); // 月曜へ
+  var endD=new Date(y, m-1+3, 0); // 3ヶ月目の末日
+  var edow=endD.getDay(); endD.setDate(endD.getDate() + (edow===0?0:7-edow)); // 日曜へ
+
+  var wrap=el("div",{});
+  wrap.appendChild(head); wrap.appendChild(dow);
+
+  var cur=new Date(startD);
+  var weekRow=null, weekDays=[];
+  while(cur<=endD){
+    var dateStr=ymd(cur);
+    weekDays.push(new Date(cur));
+    if(weekDays.length===7){
+      // この週に「1日」が含まれるなら、その月のセパレーターを週の前に挿入
+      var firstOfMonth=weekDays.find(function(d){return d.getDate()===1;});
+      if(firstOfMonth){
+        wrap.appendChild(el("div",{style:"display:flex;align-items:center;gap:10px;margin:14px 0 6px;"},[
+          el("div",{style:"flex:1;height:2px;background:#c7d2fe;"}),
+          el("div",{style:"font-size:15px;font-weight:800;color:#4f46e5;background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:4px 14px;"},[firstOfMonth.getFullYear()+"年 "+(firstOfMonth.getMonth()+1)+"月"]),
+          el("div",{style:"flex:1;height:2px;background:#c7d2fe;"})
+        ]));
+      }
+      var row=el("div",{style:"display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;"});
+      weekDays.forEach(function(d){ row.appendChild(monthDayCell(d)); });
+      wrap.appendChild(row);
+      weekDays=[];
+    }
+    cur.setDate(cur.getDate()+1);
+  }
+  return wrap;
+}
+
+// 月ビューの1日セル（月ごとに背景を交互に薄く変える）
+function monthDayCell(dObj){
+  var dateStr=ymd(dObj);
+  var isToday=dateStr===todayStr();
+  var avail=dayAvailStatus(dateStr);
+  var ds=sortDaySessions(S.data.sessions.filter(function(s){return s.date===dateStr;}));
+  var ev=S.data.otherEvents.filter(function(e){return e.date===dateStr;});
+  var monthTint = (dObj.getMonth()%2===1); // 奇数月(0始まりで偶数月番号)を薄グレーに
+  var baseBg = monthTint ? "#f1f3f9" : "#ffffff";
+  var borderColor = avail==="full"?"#ef4444":(avail==="partial"?"#f59e0b":(isToday?"#6366f1":"#e2e5ee"));
+  var borderWidth = avail?"2px":"1px";
+  var bgColor = avail==="full"?"#fef2f2":(avail==="partial"?"#fffbeb":(isToday?"#eef2ff":baseBg));
+  var cell=el("div",{
+    style:"background:"+bgColor+";border:"+borderWidth+" solid "+borderColor+";border-radius:8px;padding:5px 4px;min-height:80px;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0;overflow:hidden;",
+    onclick:function(){ openDayDetail(dateStr); }
   });
-  return el("div",{},[head,dow,grid]);
+  cell.appendChild(el("div",{style:"font-size:12px;font-weight:700;text-align:center;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 2px;"+(isToday?"color:#fff;background:#6366f1;":"color:#6b7280;")},[String(dObj.getDate())]));
+  ds.forEach(function(s){
+    var info=sessionInfo(s);
+    cell.appendChild(el("div",{style:"background:"+(s.deputized?"#fafafa":info.color+"35")+";border-left:3px solid "+(s.deputized?"#d1d5db":info.color)+";border-radius:0 3px 3px 0;padding:2px 3px;opacity:"+(s.deputized?"0.55":"1")+";"},[
+      el("div",{style:"font-size:9px;font-weight:"+(s.deputized?"400":"600")+";color:"+(s.deputized?"#9ca3af":"#1f2937")+";overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"},[info.name])
+    ]));
+  });
+  ev.forEach(function(e){
+    cell.appendChild(el("div",{style:"background:"+e.color+"25;border-left:3px solid "+e.color+";border-radius:0 3px 3px 0;padding:2px 3px;"},[
+      el("div",{style:"font-size:9px;color:"+e.color+";font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"},[e.title])
+    ]));
+  });
+  return cell;
+}
+
+// 今日に戻る（週・月共通）
+function goToday(){
+  var now=new Date();
+  S.currentWeek=todayStr();
+  S.currentMonth={year:now.getFullYear(),month:now.getMonth()+1};
+  window.scrollTo(0,0);
+  render();
 }
 function shiftMonth(dir){
   var m=S.currentMonth.month+dir, y=S.currentMonth.year;
@@ -620,7 +677,18 @@ function closeModal(){ S.modal=null; render(); }
 function openSettings(){
   var body=[];
   body.push(el("div",{style:"font-size:12px;color:#9ca3af;margin-bottom:8px;"},["データ管理"]));
-  body.push(el("button",{style:ST.addBtn+"background:#1e3a8a;width:100%;justify-content:center;margin-bottom:8px;",onclick:function(){ exportData(); }},["⬇ バックアップを書き出す"]));
+  // 最終バックアップ表示
+  if(S.data.lastBackup){
+    var lb=new Date(S.data.lastBackup);
+    var days=Math.floor((Date.now()-lb.getTime())/(24*60*60*1000));
+    var overdue=backupOverdue();
+    body.push(el("div",{style:"font-size:12px;font-weight:600;color:"+(overdue?"#ef4444":"#059669")+";margin-bottom:8px;"},[
+      "最終バックアップ: "+(lb.getMonth()+1)+"/"+lb.getDate()+"（"+days+"日前）"+(overdue?" ⚠ そろそろ書き出しましょう":"")
+    ]));
+  } else {
+    body.push(el("div",{style:"font-size:12px;font-weight:600;color:#ef4444;margin-bottom:8px;"},["⚠ まだ一度もバックアップしていません"]));
+  }
+  body.push(el("button",{style:ST.addBtn+"background:#1e3a8a;width:100%;justify-content:center;margin-bottom:8px;",onclick:function(){ exportData(); closeModal(); }},["⬇ バックアップを書き出す"]));
   var lbl=el("label",{style:ST.ghostBtn+"cursor:pointer;width:100%;display:flex;justify-content:center;box-sizing:border-box;margin-bottom:8px;"},["⬆ バックアップから復元"]);
   var inp=el("input",{type:"file",accept:"application/json,.json",style:"display:none;",onchange:function(e){ if(e.target.files[0]){ loadBackup(e.target.files[0]); e.target.value=""; } }});
   lbl.appendChild(inp); body.push(lbl);
@@ -652,10 +720,14 @@ function timeSelect(value, onChange){
   var mins=[]; for(var i=0;i<12;i++) mins.push(pad(i*5));
   var curMin=mins.indexOf(m)>=0?m:pad(Math.round(parseInt(m)/5)*5%60);
   var selStyle="flex:1;min-width:0;background:#f5f6fa;border:1px solid #d8dcec;border-radius:8px;color:#1f2937;padding:8px 6px;font-size:15px;box-sizing:border-box;-webkit-appearance:none;appearance:none;text-align:center;";
-  var hSel=el("select",{style:selStyle,onchange:function(e){ onChange(e.target.value+":"+curMin); }});
+  var hSel=el("select",{style:selStyle});
   for(var hh=0;hh<24;hh++){ var o=el("option",{value:pad(hh)},[pad(hh)]); if(pad(hh)===h)o.selected=true; hSel.appendChild(o); }
-  var mSel=el("select",{style:selStyle,onchange:function(e){ onChange(h+":"+e.target.value); }});
+  var mSel=el("select",{style:selStyle});
   mins.forEach(function(mm){ var o=el("option",{value:mm},[mm]); if(mm===curMin)o.selected=true; mSel.appendChild(o); });
+  // 変更時は両方のselectの「今の値」を読んで通知（古い値の固定参照によるバグを防ぐ）
+  function fire(){ onChange(hSel.value+":"+mSel.value); }
+  hSel.addEventListener("change", fire);
+  mSel.addEventListener("change", fire);
   return el("div",{style:"display:flex;align-items:center;gap:4px;"},[hSel, el("span",{style:"font-weight:700;color:#6b7280;"},[":"]), mSel]);
 }
 
@@ -750,6 +822,24 @@ function openSessionEdit(session, presetDate){
   if(v.studentId==null) v.studentId="";
   function build(){
     var body=[];
+    // よく使う予定（テンプレート）: 新規追加時のみ表示
+    if(isNew && S.data.templates.length){
+      var tRow=el("div",{style:"display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"});
+      S.data.templates.forEach(function(t,ti){
+        var stName = t.studentId!=null ? (studentById(t.studentId)?studentById(t.studentId).name:"?") : (t.depName||"代理");
+        var label = (t.kind==="ta"?"TA":(t.kind==="fixed"?"固定":(t.kind==="meeting"?"面談":stName)))+" "+(t.startTime||"")+"〜"+(t.endTime||"");
+        var chip=el("div",{style:"display:flex;align-items:center;gap:4px;background:#eef2ff;border:1px solid #c7d2fe;border-radius:16px;padding:6px 6px 6px 12px;"},[
+          el("span",{style:"font-size:12px;font-weight:700;color:#4f46e5;cursor:pointer;",onclick:function(){
+            v.kind=t.kind; v.studentId=t.studentId!=null?String(t.studentId):""; v.depName=t.depName||""; v.subType=t.subType||"outside";
+            v.startTime=t.startTime; v.endTime=t.endTime; v.note=t.note||""; v.fixedAmount=t.fixedAmount||0; v.deputized=false;
+            build();
+          }},[label]),
+          el("span",{style:"font-size:13px;color:#9ca3af;cursor:pointer;padding:0 5px;",onclick:function(){ if(confirm("このテンプレートを削除しますか？")){ S.data.templates.splice(ti,1); save(); build(); } }},["×"])
+        ]);
+        tRow.appendChild(chip);
+      });
+      body.push(el("div",{},[el("label",{style:ST.label},["よく使う予定（タップで入力）"]), tRow]));
+    }
     var kinds=[["tutor","授業"],["ta","TA"],["fixed","固定報酬"],["meeting","面談"]];
     var kindRow=el("div",{style:"display:flex;gap:6px;margin-bottom:12px;"});
     kinds.forEach(function(k){
@@ -788,6 +878,12 @@ function openSessionEdit(session, presetDate){
       if(v.deputized) depWrap.querySelector("input").checked=true;
       body.push(depWrap);
     }
+    var tplWrap=el("label",{style:"display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;"},[
+      el("input",{type:"checkbox",onchange:function(e){ v._saveTpl=e.target.checked; }}),
+      el("span",{style:"font-size:13px;color:#1f2937;"},["この内容を「よく使う予定」に登録する"])
+    ]);
+    if(v._saveTpl) tplWrap.querySelector("input").checked=true;
+    body.push(tplWrap);
     body.push(el("button",{style:ST.addBtn+"width:100%;justify-content:center;margin-top:4px;",onclick:function(){ saveSession(v, isNew); }},[isNew?"追加する":"保存する"]));
     if(!isNew) body.push(el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;margin-top:8px;color:#ef4444;border-color:#fecaca;",onclick:function(){ if(confirm("この授業を削除しますか？")){ S.data.sessions=S.data.sessions.filter(function(x){return x.id!==v.id;}); save(); closeModal(); } }},["この授業を削除"]));
     S.modal=modalShell(isNew?"授業・業務を追加":"授業・業務を編集", body); render();
@@ -817,6 +913,13 @@ function saveSession(v, isNew){
   };
   if(isNew) S.data.sessions.push(rec);
   else S.data.sessions=S.data.sessions.map(function(x){return x.id===rec.id?rec:x;});
+  // テンプレート登録（日付を除いた内容を保存）
+  if(v._saveTpl){
+    S.data.templates.push({
+      kind:rec.kind, studentId:rec.studentId, depName:rec.depName||"", subType:rec.subType||"outside",
+      startTime:rec.startTime, endTime:rec.endTime, note:rec.note||"", fixedAmount:rec.fixedAmount||0
+    });
+  }
   save(); closeModal();
 }
 
@@ -997,9 +1100,24 @@ function openRequestEdit(request){
     });
     body.push(field("メモ", el("input",{value:v.note,style:ST.input,placeholder:"科目・希望時間帯など",oninput:function(e){ v.note=e.target.value; }})));
     body.push(el("button",{style:ST.addBtn+"width:100%;justify-content:center;margin-top:4px;",onclick:function(){
+      // 「自分で対応」＋確定日ありのコマを、カレンダーに授業として自動登録（未登録のもののみ）
+      var added=0;
+      (v.slots||[]).forEach(function(slot){
+        if(slot.status==="mine" && slot.confirmedDate && !slot.sessionId){
+          var sid=newId(S.data.sessions);
+          S.data.sessions.push({
+            id:sid, studentId:null, date:slot.confirmedDate,
+            startTime:slot.startTime||"16:00", endTime:slot.endTime||"17:30",
+            deputized:false, depName:(v.studentName||""), subType:"outside",
+            note:v.note||"", kind:"tutor", snapshotRate:RATE_OUTSIDE, fixedAmount:0
+          });
+          slot.sessionId=sid; added++;
+        }
+      });
       if(isNew){ v.id=newId(S.data.requests); S.data.requests.push(v); }
       else S.data.requests=S.data.requests.map(function(x){return x.id===v.id?v:x;});
       save(); closeModal();
+      if(added>0) alert(added+"コマをカレンダーに登録しました。\n（区分は塾外扱いです。違う場合はカレンダーから該当コマを開いて修正してください）");
     }},[isNew?"追加する":"保存する"]));
     S.modal=modalShell(isNew?"依頼を追加":"依頼を編集", body); render();
   }
@@ -1008,6 +1126,8 @@ function openRequestEdit(request){
 
 // ── バックアップ ──
 function exportData(){
+  S.data.lastBackup=new Date().toISOString();
+  save();
   var data=Object.assign({}, S.data, { exportedAt:new Date().toISOString() });
   var json=JSON.stringify(data,null,2);
   var blob=new Blob([json],{type:"application/json"});
@@ -1023,7 +1143,7 @@ function loadBackup(file){
       var data=JSON.parse(e.target.result);
       if(!data||!Array.isArray(data.sessions)){ alert("このファイルは読み込めませんでした（形式が違います）。"); return; }
       if(confirm("現在のデータを、このファイルの内容で置き換えます。よろしいですか？")){
-        S.data={ sessions:data.sessions||[], students:data.students||[], otherEvents:data.otherEvents||[], requests:data.requests||[], manualIncome:data.manualIncome||{}, manualNet:data.manualNet||{}, unavailable:data.unavailable||[] };
+        S.data={ sessions:data.sessions||[], students:data.students||[], otherEvents:data.otherEvents||[], requests:data.requests||[], manualIncome:data.manualIncome||{}, manualNet:data.manualNet||{}, unavailable:data.unavailable||[], templates:data.templates||[], lastBackup:data.lastBackup||null };
         save(); render(); alert("読み込みが完了しました。");
       }
     }catch(err){ alert("ファイルの読み込みに失敗しました。"); }
