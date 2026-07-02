@@ -275,7 +275,7 @@ function header(){
       style:"flex:1;padding:12px 4px;border-radius:10px 10px 0 0;border:none;cursor:pointer;font-size:15px;position:relative;"+
         "background:"+(active?"#1e3a8a":"#eef0f7")+";color:"+(active?"#fff":"#64748b")+";font-weight:"+(active?"700":"500")+";"+
         "border-bottom:3px solid "+(active?"#1e3a8a":"transparent")+";",
-      onclick:function(){ S.view=v; render(); }
+      onclick:function(){ S.view=v; if(v==="month") S._monthScrollPending=true; render(); }
     },[labels[v]]);
     if(openCount>0){
       btn.appendChild(el("span",{style:"position:absolute;top:4px;right:6px;background:#f59e0b;color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;"},[String(openCount)]));
@@ -346,7 +346,7 @@ function shiftWeek(days){ var d=new Date(S.currentWeek); d.setDate(d.getDate()+d
 // ── 月ビュー ──
 function viewMonth(){
   var y=S.currentMonth.year, m=S.currentMonth.month;
-  var head=el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"},[
+  var head=el("div",{style:"display:flex;align-items:center;justify-content:space-between;padding:6px 0;"},[
     el("button",{style:ST.navBtn,onclick:function(){ shiftMonth(-1); }},["‹"]),
     el("div",{style:"display:flex;align-items:center;gap:8px;"},[
       el("div",{style:"font-size:16px;font-weight:700;color:#4f46e5;"},[y+"年 "+m+"月〜"]),
@@ -354,27 +354,30 @@ function viewMonth(){
     ]),
     el("button",{style:ST.navBtn,onclick:function(){ shiftMonth(1); }},["›"])
   ]);
-  var dow=el("div",{style:"display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;position:sticky;top:0;background:#f5f6fa;z-index:5;padding:4px 0;"});
+  var dow=el("div",{style:"display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding-bottom:4px;"});
   DAYS.forEach(function(d){ dow.appendChild(el("div",{style:"text-align:center;font-size:11px;color:#9ca3af;font-weight:700;"},[d])); });
+  // ヘッダー（月ナビ+今日+曜日）をスクロールしても上部に固定
+  var sticky=el("div",{style:"position:sticky;top:0;background:#f5f6fa;z-index:5;"},[head,dow]);
 
-  // 連続表示: 表示開始月の1日を含む週の月曜〜 3ヶ月後の月末を含む週の日曜まで
-  var startD=new Date(y, m-1, 1);
+  // 連続表示: 前月の1日を含む週の月曜 〜 2ヶ月後の月末を含む週の日曜（前月へもスクロールで戻れる）
+  var startD=new Date(y, m-2, 1);
   var sdow=startD.getDay(); startD.setDate(startD.getDate() - (sdow===0?6:sdow-1)); // 月曜へ
-  var endD=new Date(y, m-1+3, 0); // 3ヶ月目の末日
+  var endD=new Date(y, m-1+3, 0); // 2ヶ月後の末日
   var edow=endD.getDay(); endD.setDate(endD.getDate() + (edow===0?0:7-edow)); // 日曜へ
 
   var wrap=el("div",{});
-  wrap.appendChild(head); wrap.appendChild(dow);
+  wrap.appendChild(sticky);
 
   var cur=new Date(startD);
-  var weekRow=null, weekDays=[];
+  var weekDays=[];
+  var lastSepMonth=null; // 直近に表示したセパレーターの月（跨ぎ日判定用）
+  var todayAnchor=null;
   while(cur<=endD){
-    var dateStr=ymd(cur);
     weekDays.push(new Date(cur));
     if(weekDays.length===7){
-      // この週に「1日」が含まれるなら、その月のセパレーターを週の前に挿入
       var firstOfMonth=weekDays.find(function(d){return d.getDate()===1;});
       if(firstOfMonth){
+        lastSepMonth=firstOfMonth.getMonth();
         wrap.appendChild(el("div",{style:"display:flex;align-items:center;gap:10px;margin:14px 0 6px;"},[
           el("div",{style:"flex:1;height:2px;background:#c7d2fe;"}),
           el("div",{style:"font-size:15px;font-weight:800;color:#4f46e5;background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:4px 14px;"},[firstOfMonth.getFullYear()+"年 "+(firstOfMonth.getMonth()+1)+"月"]),
@@ -382,32 +385,47 @@ function viewMonth(){
         ]));
       }
       var row=el("div",{style:"display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;"});
-      weekDays.forEach(function(d){ row.appendChild(monthDayCell(d)); });
+      var sepM=lastSepMonth;
+      weekDays.forEach(function(d){
+        var cell=monthDayCell(d, sepM);
+        if(ymd(d)===todayStr()) todayAnchor=cell;
+        row.appendChild(cell);
+      });
       wrap.appendChild(row);
       weekDays=[];
     }
     cur.setDate(cur.getDate()+1);
   }
+  // 初期表示位置: 月タブを開いた直後/今日ボタン時のみ、今日へスクロール
+  if(S._monthScrollPending){
+    S._monthScrollPending=false;
+    setTimeout(function(){
+      if(todayAnchor && todayAnchor.scrollIntoView){ todayAnchor.scrollIntoView({block:"center"}); }
+    }, 0);
+  }
   return wrap;
 }
 
-// 月ビューの1日セル（月ごとに背景を交互に薄く変える）
-function monthDayCell(dObj){
+// 月ビューの1日セル（sepMonth=そのブロックの月。違う月の日は「M/D」薄グレー表示）
+function monthDayCell(dObj, sepMonth){
   var dateStr=ymd(dObj);
   var isToday=dateStr===todayStr();
+  var isOtherMonth = (sepMonth!=null && dObj.getMonth()!==sepMonth);
   var avail=dayAvailStatus(dateStr);
   var ds=sortDaySessions(S.data.sessions.filter(function(s){return s.date===dateStr;}));
   var ev=S.data.otherEvents.filter(function(e){return e.date===dateStr;});
-  var monthTint = (dObj.getMonth()%2===1); // 奇数月(0始まりで偶数月番号)を薄グレーに
+  var monthTint = (dObj.getMonth()%2===1);
   var baseBg = monthTint ? "#f1f3f9" : "#ffffff";
   var borderColor = avail==="full"?"#ef4444":(avail==="partial"?"#f59e0b":(isToday?"#6366f1":"#e2e5ee"));
   var borderWidth = avail?"2px":"1px";
   var bgColor = avail==="full"?"#fef2f2":(avail==="partial"?"#fffbeb":(isToday?"#eef2ff":baseBg));
   var cell=el("div",{
-    style:"background:"+bgColor+";border:"+borderWidth+" solid "+borderColor+";border-radius:8px;padding:5px 4px;min-height:80px;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0;overflow:hidden;",
+    style:"background:"+bgColor+";border:"+borderWidth+" solid "+borderColor+";border-radius:8px;padding:5px 4px;min-height:80px;cursor:pointer;display:flex;flex-direction:column;gap:2px;min-width:0;overflow:hidden;"+(isOtherMonth?"opacity:0.55;":""),
     onclick:function(){ openDayDetail(dateStr); }
   });
-  cell.appendChild(el("div",{style:"font-size:12px;font-weight:700;text-align:center;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 2px;"+(isToday?"color:#fff;background:#6366f1;":"color:#6b7280;")},[String(dObj.getDate())]));
+  // 跨ぎ日は「8/31」形式・薄めに（この週はセパレーターの月とは別の月の日、と分かるように）
+  var dayLabel = isOtherMonth ? ((dObj.getMonth()+1)+"/"+dObj.getDate()) : String(dObj.getDate());
+  cell.appendChild(el("div",{style:"font-size:"+(isOtherMonth?"10px":"12px")+";font-weight:700;text-align:center;min-width:22px;height:22px;border-radius:11px;display:flex;align-items:center;justify-content:center;margin:0 auto 2px;padding:0 3px;"+(isToday?"color:#fff;background:#6366f1;":(isOtherMonth?"color:#b0b6c3;":"color:#6b7280;"))},[dayLabel]));
   ds.forEach(function(s){
     var info=sessionInfo(s);
     cell.appendChild(el("div",{style:"background:"+(s.deputized?"#fafafa":info.color+"35")+";border-left:3px solid "+(s.deputized?"#d1d5db":info.color)+";border-radius:0 3px 3px 0;padding:2px 3px;opacity:"+(s.deputized?"0.55":"1")+";"},[
@@ -427,13 +445,13 @@ function goToday(){
   var now=new Date();
   S.currentWeek=todayStr();
   S.currentMonth={year:now.getFullYear(),month:now.getMonth()+1};
-  window.scrollTo(0,0);
+  if(S.view==="month") S._monthScrollPending=true; else window.scrollTo(0,0);
   render();
 }
 function shiftMonth(dir){
   var m=S.currentMonth.month+dir, y=S.currentMonth.year;
   if(m<1){m=12;y--;} if(m>12){m=1;y++;}
-  S.currentMonth={year:y,month:m}; render();
+  S.currentMonth={year:y,month:m}; window.scrollTo(0,0); render();
 }
 
 /* ===== 依頼・生徒・収入ビュー＋モーダル ===== */
