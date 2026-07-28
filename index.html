@@ -58,7 +58,8 @@ var initialData = {
   manualNet: {},
   unavailable: [],
   templates: [],
-  lastBackup: null
+  lastBackup: null,
+  lastTimes: null
 };
 
 // ── 状態 ──
@@ -94,24 +95,57 @@ function el(tag, attrs, children){
 }
 
 // ── 保存 / 読込 ──
+var BACKUP_KEY = STORAGE_KEY + "_bak";
+function parseData(p){
+  return {
+    sessions: p.sessions||[], students: p.students||[],
+    otherEvents: p.otherEvents||[], requests: p.requests||[],
+    manualIncome: p.manualIncome||{},
+    manualNet: p.manualNet||{},
+    unavailable: p.unavailable||[],
+    templates: p.templates||[],
+    lastBackup: p.lastBackup||null,
+    lastTimes: p.lastTimes||null
+  };
+}
+// データの「中身の量」。復旧時にどちらが有効か比較する目安
+function dataWeight(d){
+  if(!d) return -1;
+  return (d.sessions||[]).length*10 + (d.students||[]).length*5 + (d.requests||[]).length
+       + Object.keys(d.manualIncome||{}).length + Object.keys(d.manualNet||{}).length;
+}
 function load(){
-  try{
-    var raw=localStorage.getItem(STORAGE_KEY);
-    if(!raw) return JSON.parse(JSON.stringify(initialData));
-    var p=JSON.parse(raw);
-    return {
-      sessions: p.sessions||[], students: p.students||[],
-      otherEvents: p.otherEvents||[], requests: p.requests||[],
-      manualIncome: p.manualIncome||{},
-      manualNet: p.manualNet||{},
-      unavailable: p.unavailable||[],
-      templates: p.templates||[],
-      lastBackup: p.lastBackup||null
-    };
-  }catch(e){ return JSON.parse(JSON.stringify(initialData)); }
+  var main=null, bak=null;
+  try{ var r=localStorage.getItem(STORAGE_KEY); if(r) main=parseData(JSON.parse(r)); }catch(e){ main=null; }
+  try{ var b=localStorage.getItem(BACKUP_KEY); if(b) bak=parseData(JSON.parse(b)); }catch(e){ bak=null; }
+  // 主データが壊れている/空で、控えに中身があれば控えから復旧
+  if(!main && bak) return bak;
+  if(main && bak && dataWeight(bak) > dataWeight(main)*2 && dataWeight(main)<=0) return bak;
+  if(main) return main;
+  return JSON.parse(JSON.stringify(initialData));
 }
 function save(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(S.data)); }catch(e){}
+  try{
+    var json=JSON.stringify(S.data);
+    localStorage.setItem(STORAGE_KEY, json);
+    // 保険としてもう1つのキーにも複製（片方が壊れても復旧できる）
+    localStorage.setItem(BACKUP_KEY, json);
+  }catch(e){}
+}
+// バックアップJSONの中身を要約（復元前の確認用）
+function summarizeBackup(d){
+  var ss=d.sessions||[];
+  var dates=ss.map(function(s){return s.date;}).filter(Boolean).sort();
+  var range = dates.length ? (dates[0].replace(/-/g,"/")+" 〜 "+dates[dates.length-1].replace(/-/g,"/")) : "なし";
+  return {
+    sessions: ss.length,
+    students: (d.students||[]).length,
+    requests: (d.requests||[]).length,
+    manualIncome: Object.keys(d.manualIncome||{}).length,
+    manualNet: Object.keys(d.manualNet||{}).length,
+    range: range,
+    exportedAt: d.exportedAt || null
+  };
 }
 function newId(arr){ return arr.reduce(function(m,x){return Math.max(m,x.id||0);},0)+1; }
 
@@ -215,6 +249,36 @@ function backupOverdue(){
   if(!S.data || !S.data.lastBackup) return true;
   var last=new Date(S.data.lastBackup).getTime();
   return (Date.now()-last) > 14*24*60*60*1000;
+}
+
+// ── 入力チェック（重複・不可日・日付妥当性） ──
+function toMin(t){ var a=(t||"0:0").split(":"); return parseInt(a[0])*60+parseInt(a[1]); }
+function overlaps(aS,aE,bS,bE){ return toMin(aS) < toMin(bE) && toMin(bS) < toMin(aE); }
+// 同じ日時に既存の予定があるか（自分自身は除外）
+function findConflicts(date, startTime, endTime, excludeId){
+  var out=[];
+  S.data.sessions.forEach(function(s){
+    if(s.date!==date) return;
+    if(excludeId!=null && s.id===excludeId) return;
+    if(overlaps(startTime,endTime,s.startTime,s.endTime)) out.push(s);
+  });
+  return out;
+}
+// バイト不可の日/時間帯にかかるか。かかる場合は理由付きの文言を返す
+function unavailConflict(date, startTime, endTime){
+  var list=unavailFor(date);
+  for(var i=0;i<list.length;i++){
+    var u=list[i];
+    if(u.allDay) return { type:"full", reason:u.reason||"" };
+    if(overlaps(startTime,endTime,u.startTime||"00:00",u.endTime||"23:59")) return { type:"partial", reason:u.reason||"", range:(u.startTime+"〜"+u.endTime) };
+  }
+  return null;
+}
+// 極端に離れた日付か（前後1年以上）
+function dateFarFromToday(dateStr){
+  var d=new Date(dateStr).getTime(), n=Date.now();
+  var diffDays=Math.abs(d-n)/(24*60*60*1000);
+  return diffDays>365;
 }
 
 /* ===== 描画・UI ===== */
@@ -853,7 +917,8 @@ function openUnavailEdit(date){
 // ── 授業 追加/編集 ──
 function openSessionEdit(session, presetDate){
   var isNew=!session;
-  var v=session?Object.assign({subType:"outside"},session):{ id:null, studentId:"", date:presetDate||todayStr(), startTime:"16:00", endTime:"17:30", deputized:false, note:"", kind:"tutor", subType:"outside", fixedAmount:0 };
+  var lastT = S.data.lastTimes || { startTime:"16:00", endTime:"17:30" };
+  var v=session?Object.assign({subType:"outside"},session):{ id:null, studentId:"", date:presetDate||todayStr(), startTime:lastT.startTime, endTime:lastT.endTime, deputized:false, note:"", kind:"tutor", subType:"outside", fixedAmount:0 };
   if(v.studentId==null) v.studentId="";
   function build(){
     var body=[];
@@ -897,12 +962,10 @@ function openSessionEdit(session, presetDate){
       }
     }
     body.push(field("日付", el("input",{type:"date",value:v.date,style:ST.input,onchange:function(e){ v.date=e.target.value; }})));
-    if(v.kind!=="fixed"){
-      body.push(el("div",{style:"display:flex;gap:10px;"},[
-        el("div",{style:"flex:1;min-width:0;"},[el("label",{style:ST.label},["開始"]), el("div",{style:"margin-top:4px;margin-bottom:12px;"},[timeSelect(v.startTime,function(val){v.startTime=val;})])]),
-        el("div",{style:"flex:1;min-width:0;"},[el("label",{style:ST.label},["終了"]), el("div",{style:"margin-top:4px;margin-bottom:12px;"},[timeSelect(v.endTime,function(val){v.endTime=val;})])])
-      ]));
-    }
+    body.push(el("div",{style:"display:flex;gap:10px;"},[
+      el("div",{style:"flex:1;min-width:0;"},[el("label",{style:ST.label},["開始"]), el("div",{style:"margin-top:4px;margin-bottom:12px;"},[timeSelect(v.startTime,function(val){v.startTime=val;})])]),
+      el("div",{style:"flex:1;min-width:0;"},[el("label",{style:ST.label},["終了"]), el("div",{style:"margin-top:4px;margin-bottom:12px;"},[timeSelect(v.endTime,function(val){v.endTime=val;})])])
+    ]));
     if(v.kind==="fixed") body.push(field("金額（円）", el("input",{type:"number",value:v.fixedAmount||"",style:ST.input,oninput:function(e){ v.fixedAmount=parseInt(e.target.value)||0; }})));
     body.push(field("メモ", el("input",{value:v.note||"",style:ST.input,placeholder:"科目など",oninput:function(e){ v.note=e.target.value; }})));
     if(v.kind==="tutor" && v.studentId!==""){
@@ -921,6 +984,29 @@ function openSessionEdit(session, presetDate){
         el("span",{style:"font-size:16px;font-weight:700;color:"+(inc>0?"#059669":"#9ca3af")+";"},[inc>0?"¥"+inc.toLocaleString():(session.deputized?"¥0（代わってもらう）":"¥0")])
       ]));
     }
+    // ── 繰り返し登録（新規追加時のみ） ──
+    if(isNew){
+      var repWrap=el("div",{style:"background:#f5f6fa;border:1px solid #d8dcec;border-radius:10px;padding:10px 12px;margin-bottom:10px;"});
+      var repToggle=el("label",{style:"display:flex;align-items:center;gap:8px;cursor:pointer;"},[
+        el("input",{type:"checkbox",onchange:function(e){ v._repeat=e.target.checked; build(); }}),
+        el("span",{style:"font-size:13px;font-weight:600;color:#1f2937;"},["毎週この曜日・時間で繰り返し登録する"])
+      ]);
+      if(v._repeat) repToggle.querySelector("input").checked=true;
+      repWrap.appendChild(repToggle);
+      if(v._repeat){
+        var wk=DAYS[(new Date(v.date).getDay()+6)%7];
+        repWrap.appendChild(el("div",{style:"font-size:11px;color:#6b7280;margin:6px 0 8px;"},["毎週"+wk+"曜 "+v.startTime+"〜"+v.endTime+" で登録します"]));
+        repWrap.appendChild(el("label",{style:ST.label},["何回分登録しますか"]));
+        var cntSel=el("select",{style:ST.input+"margin-bottom:0;",onchange:function(e){ v._repeatCount=parseInt(e.target.value); }});
+        [4,8,12,16,20,24].forEach(function(n){
+          var o=el("option",{value:String(n)},[n+"回（約"+Math.round(n/4)+"ヶ月）"]);
+          if((v._repeatCount||8)===n) o.selected=true;
+          cntSel.appendChild(o);
+        });
+        repWrap.appendChild(cntSel);
+      }
+      body.push(repWrap);
+    }
     var tplWrap=el("label",{style:"display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;"},[
       el("input",{type:"checkbox",onchange:function(e){ v._saveTpl=e.target.checked; }}),
       el("span",{style:"font-size:13px;color:#1f2937;"},["この内容を「よく使う予定」に登録する"])
@@ -928,13 +1014,36 @@ function openSessionEdit(session, presetDate){
     if(v._saveTpl) tplWrap.querySelector("input").checked=true;
     body.push(tplWrap);
     body.push(el("button",{style:ST.addBtn+"width:100%;justify-content:center;margin-top:4px;",onclick:function(){ saveSession(v, isNew); }},[isNew?"追加する":"保存する"]));
-    if(!isNew) body.push(el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;margin-top:8px;color:#ef4444;border-color:#fecaca;",onclick:function(){ if(confirm("この授業を削除しますか？")){ S.data.sessions=S.data.sessions.filter(function(x){return x.id!==v.id;}); save(); closeModal(); } }},["この授業を削除"]));
+    if(!isNew){
+      body.push(el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;margin-top:8px;",onclick:function(){ duplicateSession(v); }},["別の日にコピーする"]));
+      body.push(el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;margin-top:8px;color:#ef4444;border-color:#fecaca;",onclick:function(){ if(confirm("この授業を削除しますか？")){ S.data.sessions=S.data.sessions.filter(function(x){return x.id!==v.id;}); save(); closeModal(); } }},["この授業を削除"]));
+    }
     S.modal=modalShell(isNew?"授業・業務を追加":"授業・業務を編集", body); render();
   }
   build();
 }
 
 function saveSession(v, isNew){
+  // ── 入力チェック（重複・バイト不可・極端な日付） ──
+  var warns=[];
+  var excludeId = isNew ? null : v.id;
+  var conf=findConflicts(v.date, v.startTime, v.endTime, excludeId);
+  if(conf.length){
+    var names=conf.map(function(s){ return sessionInfo(s).name+"（"+s.startTime+"〜"+s.endTime+"）"; }).join("\n・");
+    warns.push("この時間帯には、すでに次の予定があります:\n・"+names);
+  }
+  var ua=unavailConflict(v.date, v.startTime, v.endTime);
+  if(ua){
+    warns.push(ua.type==="full"
+      ? ("この日は「終日バイト不可」に設定されています"+(ua.reason?"（"+ua.reason+"）":"")+"。")
+      : ("この時間帯はバイト不可に設定されています（"+(ua.range||"")+(ua.reason?" / "+ua.reason:"")+"）。"));
+  }
+  if(dateFarFromToday(v.date)){
+    warns.push("日付が今日から1年以上離れています（"+v.date.replace(/-/g,"/")+"）。入力間違いではありませんか？");
+  }
+  if(warns.length){
+    if(!confirm(warns.join("\n\n")+"\n\nこのまま登録しますか？")) return;
+  }
   // 自分が代理で入る（生徒名を自由入力／自分が教える→給料あり・通常表示）
   var isCovering = (v.kind==="tutor" && (v.studentId===""||v.studentId==null));
   var rate;
@@ -956,6 +1065,21 @@ function saveSession(v, isNew){
   };
   if(isNew) S.data.sessions.push(rec);
   else S.data.sessions=S.data.sessions.map(function(x){return x.id===rec.id?rec:x;});
+  // 次回の新規追加で初期値にするため、使った時間帯を覚えておく
+  S.data.lastTimes={ startTime:rec.startTime, endTime:rec.endTime };
+  // 繰り返し登録（毎週同じ曜日・時間で指定回数分）
+  var repAdded=0, repSkipped=0;
+  if(isNew && v._repeat){
+    var n=v._repeatCount||8;
+    for(var i=1;i<n;i++){
+      var d=new Date(rec.date); d.setDate(d.getDate()+7*i);
+      var ds=ymd(d);
+      // 既に同じ時間帯に予定がある日はスキップ（重複を作らない）
+      if(findConflicts(ds, rec.startTime, rec.endTime, null).length){ repSkipped++; continue; }
+      var copy=Object.assign({}, rec, { id:newId(S.data.sessions), date:ds });
+      S.data.sessions.push(copy); repAdded++;
+    }
+  }
   // テンプレート登録（日付を除いた内容を保存）
   if(v._saveTpl){
     S.data.templates.push({
@@ -964,6 +1088,30 @@ function saveSession(v, isNew){
     });
   }
   save(); closeModal();
+  if(repAdded>0){
+    alert("繰り返し登録しました：この日を含めて計"+(repAdded+1)+"件。"+(repSkipped>0?"\n（"+repSkipped+"件は既に予定があるためスキップしました）":""));
+  }
+}
+
+// 既存コマを別の日にコピー
+function duplicateSession(src){
+  var v={ date: src.date };
+  var body=[];
+  body.push(el("div",{style:"font-size:13px;color:#6b7280;margin-bottom:10px;"},[sessionInfo(src).name+" "+src.startTime+"〜"+src.endTime+" を別の日にコピーします。"]));
+  body.push(field("コピー先の日付", el("input",{type:"date",value:v.date,style:ST.input,onchange:function(e){ v.date=e.target.value; }})));
+  body.push(el("button",{style:ST.addBtn+"width:100%;justify-content:center;",onclick:function(){
+    var conf=findConflicts(v.date, src.startTime, src.endTime, null);
+    var ua=unavailConflict(v.date, src.startTime, src.endTime);
+    var w=[];
+    if(conf.length) w.push("この時間帯には、すでに予定があります。");
+    if(ua) w.push(ua.type==="full"?"この日は終日バイト不可に設定されています。":"この時間帯はバイト不可に設定されています。");
+    if(w.length && !confirm(w.join("\n")+"\n\nこのままコピーしますか？")) return;
+    var copy=Object.assign({}, src, { id:newId(S.data.sessions), date:v.date });
+    S.data.sessions.push(copy);
+    save(); closeModal();
+    alert(v.date.replace(/-/g,"/")+" にコピーしました。");
+  }},["この日にコピー"]));
+  S.modal=modalShell("別の日にコピー", body); render();
 }
 
 // ── 生徒 追加/編集 ──
@@ -1230,8 +1378,23 @@ function loadBackup(file){
     try{
       var data=JSON.parse(e.target.result);
       if(!data||!Array.isArray(data.sessions)){ alert("このファイルは読み込めませんでした（形式が違います）。"); return; }
-      if(confirm("現在のデータを、このファイルの内容で置き換えます。よろしいですか？")){
-        S.data={ sessions:data.sessions||[], students:data.students||[], otherEvents:data.otherEvents||[], requests:data.requests||[], manualIncome:data.manualIncome||{}, manualNet:data.manualNet||{}, unavailable:data.unavailable||[], templates:data.templates||[], lastBackup:data.lastBackup||null };
+      // 復元前に中身を要約して確認（古いファイルの誤復元を防ぐ）
+      var sum=summarizeBackup(data);
+      var cur=summarizeBackup(S.data);
+      var when = sum.exportedAt ? new Date(sum.exportedAt).toLocaleString("ja-JP") : "不明";
+      var msg="【読み込むファイルの中身】\n"
+        +"書き出し日時: "+when+"\n"
+        +"授業: "+sum.sessions+"件（"+sum.range+"）\n"
+        +"生徒: "+sum.students+"人 / 依頼: "+sum.requests+"件\n"
+        +"手入力の収入: "+sum.manualIncome+"件 / 手取り: "+sum.manualNet+"件\n\n"
+        +"【今のデータ】\n"
+        +"授業: "+cur.sessions+"件 / 生徒: "+cur.students+"人 / 依頼: "+cur.requests+"件\n\n";
+      if(sum.sessions < cur.sessions){
+        msg+="⚠ 読み込むファイルの方が授業データが少ないです。古いファイルではありませんか？\n\n";
+      }
+      msg+="今のデータをこの内容で置き換えます。よろしいですか？";
+      if(confirm(msg)){
+        S.data={ sessions:data.sessions||[], students:data.students||[], otherEvents:data.otherEvents||[], requests:data.requests||[], manualIncome:data.manualIncome||{}, manualNet:data.manualNet||{}, unavailable:data.unavailable||[], templates:data.templates||[], lastBackup:data.lastBackup||null, lastTimes:data.lastTimes||null };
         save(); render(); alert("読み込みが完了しました。");
       }
     }catch(err){ alert("ファイルの読み込みに失敗しました。"); }
@@ -1243,6 +1406,16 @@ function loadBackup(file){
 function boot(){
   S.data=load();
   render();
+  registerSW();
+}
+// オフライン対応：同じ場所に置いた sw.js を登録する
+// （sw.js が無い環境ではエラーにならず、そのまま通常動作します）
+function registerSW(){
+  if(!("serviceWorker" in navigator)) return;
+  if(location.protocol!=="https:" && location.hostname!=="localhost") return;
+  try{
+    navigator.serviceWorker.register("./sw.js").catch(function(){});
+  }catch(e){}
 }
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded", boot);
 else boot();
