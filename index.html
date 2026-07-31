@@ -161,6 +161,8 @@ function calcIncome(s){
   if(s.deputized) return 0;
   if(s.kind==="meeting") return 0;
   if(s.kind==="fixed") return s.fixedAmount||0;
+  // TAで「固定報酬」を選んだ場合は金額をそのまま
+  if(s.kind==="ta" && s.payMode==="fixed") return s.fixedAmount||0;
   var rate = s.snapshotRate!=null ? s.snapshotRate : (s.kind==="ta" ? RATE_TA : getRate(studentById(s.studentId)));
   return Math.round(durationH(s.startTime,s.endTime)*rate);
 }
@@ -281,6 +283,36 @@ function dateFarFromToday(dateStr){
   return diffDays>365;
 }
 
+// ── 検索 ──
+// 授業・予定・依頼を横断して、生徒名/メモ/タイトルから探す
+function searchAll(q){
+  var k=(q||"").trim().toLowerCase();
+  if(!k) return { sessions:[], events:[], requests:[] };
+  function hit(s){ return s && String(s).toLowerCase().indexOf(k)>=0; }
+
+  var sessions=S.data.sessions.filter(function(s){
+    var info=sessionInfo(s);
+    return hit(info.name) || hit(s.note) || hit(s.depName);
+  }).sort(function(a,b){ return b.date.localeCompare(a.date) || a.startTime.localeCompare(b.startTime); });
+
+  var events=S.data.otherEvents.filter(function(e){
+    return hit(e.title) || hit(e.category);
+  }).sort(function(a,b){ return b.date.localeCompare(a.date); });
+
+  var requests=S.data.requests.filter(function(r){
+    if(hit(r.studentName) || hit(r.note)) return true;
+    return (r.slots||[]).some(function(sl){ return hit(sl.memo); });
+  });
+
+  return { sessions:sessions, events:events, requests:requests };
+}
+// 検索結果の集計（コマ数・合計金額）
+function searchSummary(sessions){
+  var total=sessions.reduce(function(sum,s){ return sum+calcIncome(s); },0);
+  var hours=sessions.reduce(function(sum,s){ return sum+durationH(s.startTime,s.endTime); },0);
+  return { count:sessions.length, total:total, hours:hours };
+}
+
 /* ===== 描画・UI ===== */
 
 // 共通スタイル文字列
@@ -317,7 +349,21 @@ function render(){
 
 function goTab(dir){
   var i=TAB_ORDER.indexOf(S.view), n=i+dir;
-  if(n>=0&&n<TAB_ORDER.length){ S.view=TAB_ORDER[n]; render(); }
+  if(n<0||n>=TAB_ORDER.length) return;
+  var v=TAB_ORDER[n];
+  if(S.view==="month" && v!=="month" && S._monthScrollHandler){
+    window.removeEventListener("scroll", S._monthScrollHandler);
+    S._monthScrollHandler=null;
+  }
+  S.view=v;
+  if(v==="month"){
+    var d=new Date();
+    S.currentMonth={year:d.getFullYear(),month:d.getMonth()+1};
+    S._monthOpenPending=true;
+  } else {
+    window.scrollTo(0,0);
+  }
+  render();
 }
 function attachSwipe(node, onPrev, onNext){
   var sx=0, sy=0;
@@ -334,7 +380,8 @@ function header(){
   if(backupOverdue()){
     gearBtn.appendChild(el("span",{style:"position:absolute;top:-4px;right:-4px;width:12px;height:12px;border-radius:50%;background:#ef4444;border:2px solid #fff;"}));
   }
-  var logoWrap=el("div",{style:"position:relative;display:flex;justify-content:center;align-items:center;margin-bottom:12px;min-height:44px;"},[logo, gearBtn]);
+  var searchBtn=el("button",{style:"position:absolute;left:0;top:50%;transform:translateY(-50%);background:#f5f6fa;border:1px solid #d8dcec;border-radius:10px;width:40px;height:40px;font-size:18px;cursor:pointer;line-height:1;",onclick:openSearch},["🔍"]);
+  var logoWrap=el("div",{style:"position:relative;display:flex;justify-content:center;align-items:center;margin-bottom:12px;min-height:44px;"},[searchBtn, logo, gearBtn]);
   var tabs=el("div",{style:"display:flex;gap:6px;"});
   var labels={week:"週",month:"月",requests:"依頼",students:"生徒",income:"収入"};
   TAB_ORDER.forEach(function(v){
@@ -344,7 +391,23 @@ function header(){
       style:"flex:1;padding:12px 4px;border-radius:10px 10px 0 0;border:none;cursor:pointer;font-size:15px;position:relative;"+
         "background:"+(active?"#1e3a8a":"#eef0f7")+";color:"+(active?"#fff":"#64748b")+";font-weight:"+(active?"700":"500")+";"+
         "border-bottom:3px solid "+(active?"#1e3a8a":"transparent")+";",
-      onclick:function(){ S.view=v; if(v==="month") S._monthOpenPending=true; else window.scrollTo(0,0); render(); }
+      onclick:function(){
+        // 月ビューから離れるときはスクロール監視を解除
+        if(S.view==="month" && v!=="month" && S._monthScrollHandler){
+          window.removeEventListener("scroll", S._monthScrollHandler);
+          S._monthScrollHandler=null;
+        }
+        S.view=v;
+        if(v==="month"){
+          // 月タブに入るときは常に「今日」を基準に戻す
+          var n=new Date();
+          S.currentMonth={year:n.getFullYear(),month:n.getMonth()+1};
+          S._monthOpenPending=true;
+        } else {
+          window.scrollTo(0,0);
+        }
+        render();
+      }
     },[labels[v]]);
     if(openCount>0){
       btn.appendChild(el("span",{style:"position:absolute;top:4px;right:6px;background:#f59e0b;color:#fff;font-size:10px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;padding:0 4px;"},[String(openCount)]));
@@ -398,7 +461,7 @@ function viewWeek(){
     });
     ev.forEach(function(e){
       listCol.appendChild(el("div",{style:"background:"+e.color+"15;border-left:4px solid "+e.color+";border-radius:0 6px 6px 0;padding:6px 10px;"},[
-        el("div",{style:"font-size:14px;color:"+e.color+";font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"},[e.title]),
+        el("div",{style:"font-size:14px;color:"+e.color+";font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"},[(e.startTime&&e.endTime?e.startTime+"〜"+e.endTime+" ":"")+e.title]),
         el("div",{style:"font-size:11px;color:#9ca3af;"},[e.category])
       ]));
     });
@@ -410,78 +473,128 @@ function viewWeek(){
 function shiftWeek(days){ var d=new Date(S.currentWeek); d.setDate(d.getDate()+days); S.currentWeek=ymd(d); render(); }
 
 // ── 月ビュー ──
+// ── 月ビュー（無限スクロール） ──
 function viewMonth(){
   var y=S.currentMonth.year, m=S.currentMonth.month;
   var head=el("div",{style:"display:flex;align-items:center;justify-content:space-between;padding:6px 0;"},[
     el("button",{style:ST.navBtn,onclick:function(){ shiftMonth(-1); }},["‹"]),
     el("div",{style:"display:flex;align-items:center;gap:8px;"},[
-      el("div",{style:"font-size:16px;font-weight:700;color:#4f46e5;"},[y+"年 "+m+"月〜"]),
+      el("div",{id:"monthLabel",style:"font-size:16px;font-weight:700;color:#4f46e5;"},[y+"年 "+m+"月"]),
       el("button",{style:"background:#eef2ff;border:1px solid #c7d2fe;border-radius:8px;color:#4f46e5;font-size:12px;font-weight:700;padding:6px 10px;cursor:pointer;",onclick:goToday},["今日"])
     ]),
     el("button",{style:ST.navBtn,onclick:function(){ shiftMonth(1); }},["›"])
   ]);
   var dow=el("div",{style:"display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding-bottom:4px;"});
   DAYS.forEach(function(d){ dow.appendChild(el("div",{style:"text-align:center;font-size:11px;color:#9ca3af;font-weight:700;"},[d])); });
-  // 月ナビ+曜日をヘッダーの直下に固定（ヘッダー高さ分ずらす）
   var sticky=el("div",{style:"position:sticky;top:var(--hdrH,120px);background:#f5f6fa;z-index:20;"},[head,dow]);
-
-  // 連続表示: 前月の1日を含む週の月曜 〜 2ヶ月後の月末を含む週の日曜（前月へもスクロールで戻れる）
-  var startD=new Date(y, m-2, 1);
-  var sdow=startD.getDay(); startD.setDate(startD.getDate() - (sdow===0?6:sdow-1)); // 月曜へ
-  var endD=new Date(y, m-1+3, 0); // 2ヶ月後の末日
-  var edow=endD.getDay(); endD.setDate(endD.getDate() + (edow===0?0:7-edow)); // 日曜へ
 
   var wrap=el("div",{});
   wrap.appendChild(sticky);
+  var body=el("div",{id:"monthBody"});
+  wrap.appendChild(body);
 
-  var cur=new Date(startD);
-  var weekDays=[];
-  var lastSepMonth=null; // 直近に表示したセパレーターの月（跨ぎ日判定用）
-  var todayAnchor=null;
-  var curMonthAnchor=null; // 表示月のセパレーター（初期スクロール先）
-  while(cur<=endD){
-    weekDays.push(new Date(cur));
-    if(weekDays.length===7){
-      var firstOfMonth=weekDays.find(function(d){return d.getDate()===1;});
-      if(firstOfMonth){
-        lastSepMonth=firstOfMonth.getMonth();
-        var sep=el("div",{style:"display:flex;align-items:center;gap:10px;margin:14px 0 6px;"},[
-          el("div",{style:"flex:1;height:2px;background:#c7d2fe;"}),
-          el("div",{style:"font-size:15px;font-weight:800;color:#4f46e5;background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:4px 14px;"},[firstOfMonth.getFullYear()+"年 "+(firstOfMonth.getMonth()+1)+"月"]),
-          el("div",{style:"flex:1;height:2px;background:#c7d2fe;"})
-        ]);
-        if(firstOfMonth.getFullYear()===y && firstOfMonth.getMonth()===m-1) curMonthAnchor=sep;
-        wrap.appendChild(sep);
+  // 表示範囲の管理（無限スクロールで前後に伸ばす）
+  var rangeStart=new Date(y, m-2, 1);   // 前月から
+  var sdw=rangeStart.getDay(); rangeStart.setDate(rangeStart.getDate()-(sdw===0?6:sdw-1));
+  var rangeEnd=new Date(y, m+1, 0);     // 2ヶ月後の末日まで
+  var edw=rangeEnd.getDay(); rangeEnd.setDate(rangeEnd.getDate()+(edw===0?0:7-edw));
+
+  var anchors={ curMonth:null, today:null };
+
+  // 指定範囲の週を生成して返す（DOM断片の配列）
+  function buildWeeks(fromDate, toDate){
+    var nodes=[], cur=new Date(fromDate), weekDays=[], lastSep=null;
+    while(cur<=toDate){
+      weekDays.push(new Date(cur));
+      if(weekDays.length===7){
+        var first=weekDays.find(function(d){return d.getDate()===1;});
+        if(first){
+          lastSep=first.getMonth();
+          var sep=el("div",{"data-sep":first.getFullYear()+"-"+(first.getMonth()+1),style:"display:flex;align-items:center;gap:10px;margin:14px 0 6px;"},[
+            el("div",{style:"flex:1;height:2px;background:#c7d2fe;"}),
+            el("div",{style:"font-size:15px;font-weight:800;color:#4f46e5;background:#eef2ff;border:1px solid #c7d2fe;border-radius:10px;padding:4px 14px;"},[first.getFullYear()+"年 "+(first.getMonth()+1)+"月"]),
+            el("div",{style:"flex:1;height:2px;background:#c7d2fe;"})
+          ]);
+          if(first.getFullYear()===y && first.getMonth()===m-1) anchors.curMonth=sep;
+          nodes.push(sep);
+        }
+        var row=el("div",{style:"display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;"});
+        var sepM=lastSep;
+        weekDays.forEach(function(d){
+          var cell=monthDayCell(d, sepM);
+          if(ymd(d)===todayStr()) anchors.today=cell;
+          row.appendChild(cell);
+        });
+        nodes.push(row);
+        weekDays=[];
       }
-      var row=el("div",{style:"display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;"});
-      var sepM=lastSepMonth;
-      weekDays.forEach(function(d){
-        var cell=monthDayCell(d, sepM);
-        if(ymd(d)===todayStr()) todayAnchor=cell;
-        row.appendChild(cell);
-      });
-      wrap.appendChild(row);
-      weekDays=[];
+      cur.setDate(cur.getDate()+1);
     }
-    cur.setDate(cur.getDate()+1);
+    return nodes;
   }
-  // 初期表示: 月タブを開いたときは「今月」の見出しが上に来る位置へ（前月は上スクロールで見える）
-  if(S._monthOpenPending){
-    S._monthOpenPending=false;
+
+  buildWeeks(rangeStart, rangeEnd).forEach(function(n){ body.appendChild(n); });
+
+  // 下方向に1ヶ月分追加
+  function extendForward(){
+    var from=new Date(rangeEnd); from.setDate(from.getDate()+1);
+    var to=new Date(from); to.setDate(to.getDate()+34);
+    var edw2=to.getDay(); to.setDate(to.getDate()+(edw2===0?0:7-edw2));
+    buildWeeks(from, to).forEach(function(n){ body.appendChild(n); });
+    rangeEnd=to;
+  }
+  // 上方向に1ヶ月分追加（スクロール位置を維持）
+  function extendBackward(){
+    var to=new Date(rangeStart); to.setDate(to.getDate()-1);
+    var from=new Date(to); from.setDate(from.getDate()-34);
+    var sdw2=from.getDay(); from.setDate(from.getDate()-(sdw2===0?6:sdw2-1));
+    var nodes=buildWeeks(from, to);
+    var before=document.documentElement.scrollHeight;
+    var firstChild=body.firstChild;
+    nodes.forEach(function(n){ body.insertBefore(n, firstChild); });
+    var after=document.documentElement.scrollHeight;
+    window.scrollBy(0, after-before);  // 見ている位置がずれないよう補正
+    rangeStart=from;
+  }
+
+  // スクロール監視（月タブ表示中のみ有効）
+  if(S._monthScrollHandler){ window.removeEventListener("scroll", S._monthScrollHandler); }
+  S._monthScrollHandler=function(){
+    if(S.view!=="month") return;
+    var st=window.scrollY||document.documentElement.scrollTop;
+    var vh=window.innerHeight, dh=document.documentElement.scrollHeight;
+    if(st+vh > dh-800) extendForward();
+    if(st < 400) extendBackward();
+    updateMonthLabel();
+  };
+  window.addEventListener("scroll", S._monthScrollHandler, {passive:true});
+
+  // 画面上部に来ている月をヘッダーのラベルに反映
+  function updateMonthLabel(){
+    var lbl=document.getElementById("monthLabel");
+    if(!lbl) return;
+    var seps=body.querySelectorAll("[data-sep]");
+    var hdrH=(document.getElementById("appHeader")||{offsetHeight:110}).offsetHeight+70;
+    var current=null;
+    for(var i=0;i<seps.length;i++){
+      var r=seps[i].getBoundingClientRect();
+      if(r.top<=hdrH+10) current=seps[i].getAttribute("data-sep"); else break;
+    }
+    if(current){
+      var p=current.split("-");
+      lbl.textContent=p[0]+"年 "+p[1]+"月";
+    }
+  }
+
+  // 月タブを開いたとき/今日ボタン: 今日の位置へ
+  if(S._monthOpenPending || S._monthScrollPending){
+    S._monthOpenPending=false; S._monthScrollPending=false;
     setTimeout(function(){
-      if(curMonthAnchor && curMonthAnchor.scrollIntoView){
-        curMonthAnchor.scrollIntoView({block:"start"});
-        var hdr=document.getElementById("appHeader");
-        var navH=(hdr?hdr.offsetHeight:110)+72; // ヘッダー＋月ナビ・曜日の高さ分
-        window.scrollBy(0,-navH);
+      var target=anchors.today||anchors.curMonth;
+      if(target && target.scrollIntoView){
+        target.scrollIntoView({block:"center"});
+        updateMonthLabel();
       }
-    }, 0);
-  }
-  // 「今日」ボタン時は今日のマスへ
-  if(S._monthScrollPending){
-    S._monthScrollPending=false;
-    setTimeout(function(){
-      if(todayAnchor && todayAnchor.scrollIntoView){ todayAnchor.scrollIntoView({block:"center"}); }
     }, 0);
   }
   return wrap;
@@ -515,7 +628,7 @@ function monthDayCell(dObj, sepMonth){
   });
   ev.forEach(function(e){
     cell.appendChild(el("div",{style:"background:"+e.color+"25;border-left:3px solid "+e.color+";border-radius:0 3px 3px 0;padding:2px 3px;"},[
-      el("div",{style:"font-size:9px;color:"+e.color+";font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"},[e.title])
+      el("div",{style:"font-size:9px;color:"+e.color+";font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"},[(e.startTime?e.startTime+" ":"")+e.title])
     ]));
   });
   return cell;
@@ -774,6 +887,84 @@ function viewIncome(){
 function closeModal(){ S.modal=null; render(); }
 
 // 設定メニュー（データ管理）
+// ── 検索 ──
+function openSearch(){
+  var q = S._searchQuery || "";
+  function build(){
+    var body=[];
+    var input=el("input",{value:q,style:ST.input,placeholder:"生徒名・メモ・予定名で検索",oninput:function(e){
+      q=e.target.value; S._searchQuery=q;
+      // 入力のたびに結果だけ差し替える（フォーカスを保つため全体は作り直さない）
+      var res=document.getElementById("searchResults");
+      if(res){ res.innerHTML=""; renderResults(res); }
+    }});
+    body.push(input);
+    var results=el("div",{id:"searchResults"});
+    renderResults(results);
+    body.push(results);
+    S.modal=modalShell("検索", body); render();
+    setTimeout(function(){ try{ input.focus(); }catch(e){} },0);
+  }
+  function renderResults(box){
+    if(!q.trim()){
+      box.appendChild(el("div",{style:"color:#9ca3af;text-align:center;padding:24px 0;font-size:13px;"},["キーワードを入力してください"]));
+      return;
+    }
+    var r=searchAll(q);
+    var sum=searchSummary(r.sessions);
+    if(r.sessions.length===0 && r.events.length===0 && r.requests.length===0){
+      box.appendChild(el("div",{style:"color:#9ca3af;text-align:center;padding:24px 0;font-size:13px;"},["見つかりませんでした"]));
+      return;
+    }
+    // 授業・業務
+    if(r.sessions.length){
+      box.appendChild(el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin:8px 0 6px;"},[
+        el("span",{style:"font-size:12px;font-weight:700;color:#4f46e5;"},["授業・業務 "+sum.count+"件"]),
+        el("span",{style:"font-size:12px;color:#059669;font-weight:700;"},["計 ¥"+sum.total.toLocaleString()+" / "+sum.hours+"h"])
+      ]));
+      r.sessions.slice(0,60).forEach(function(s){
+        var info=sessionInfo(s);
+        box.appendChild(el("div",{style:"display:flex;align-items:center;gap:10px;background:#f5f6fa;border:1px solid #e2e5ee;border-radius:10px;padding:8px 10px;margin-bottom:6px;cursor:pointer;"+(s.deputized?"opacity:0.65;":""),
+          onclick:function(){ S._searchQuery=q; openSessionEdit(s); }},[
+          el("div",{style:"width:6px;height:30px;border-radius:3px;background:"+(s.deputized?"#d1d5db":info.color)+";flex-shrink:0;"}),
+          el("div",{style:"flex:1;min-width:0;"},[
+            el("div",{style:"font-size:13px;font-weight:600;color:#1f2937;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"},[info.name+(s.deputized?"（代わってもらう）":"")]),
+            el("div",{style:"font-size:11px;color:#6b7280;"},[s.date.replace(/-/g,"/")+"（"+dowJP(s.date)+"） "+s.startTime+"〜"+s.endTime+(s.note?" · "+s.note:"")])
+          ])
+        ]));
+      });
+      if(r.sessions.length>60) box.appendChild(el("div",{style:"font-size:11px;color:#9ca3af;margin-bottom:8px;"},["他 "+(r.sessions.length-60)+"件（検索語を絞ってください）"]));
+    }
+    // その他の予定
+    if(r.events.length){
+      box.appendChild(el("div",{style:"font-size:12px;font-weight:700;color:#4f46e5;margin:12px 0 6px;"},["その他の予定 "+r.events.length+"件"]));
+      r.events.slice(0,30).forEach(function(e){
+        box.appendChild(el("div",{style:"display:flex;align-items:center;gap:10px;background:#f5f6fa;border:1px solid #e2e5ee;border-radius:10px;padding:8px 10px;margin-bottom:6px;cursor:pointer;",
+          onclick:function(){ S._searchQuery=q; openEventEdit(e); }},[
+          el("div",{style:"width:6px;height:30px;border-radius:3px;background:"+e.color+";flex-shrink:0;"}),
+          el("div",{style:"flex:1;min-width:0;"},[
+            el("div",{style:"font-size:13px;font-weight:600;color:#1f2937;"},[e.title]),
+            el("div",{style:"font-size:11px;color:#6b7280;"},[e.date.replace(/-/g,"/")+"（"+dowJP(e.date)+"）"+(e.startTime?" "+e.startTime+"〜"+e.endTime:"")+" · "+e.category])
+          ])
+        ]));
+      });
+    }
+    // 依頼
+    if(r.requests.length){
+      box.appendChild(el("div",{style:"font-size:12px;font-weight:700;color:#4f46e5;margin:12px 0 6px;"},["依頼 "+r.requests.length+"件"]));
+      r.requests.forEach(function(rq){
+        var pg=requestProgress(rq);
+        box.appendChild(el("div",{style:"background:#f5f6fa;border:1px solid #e2e5ee;border-radius:10px;padding:8px 10px;margin-bottom:6px;cursor:pointer;",
+          onclick:function(){ S._searchQuery=q; openRequestEdit(rq); }},[
+          el("div",{style:"font-size:13px;font-weight:600;color:#1f2937;"},[rq.studentName||"(名前なし)"]),
+          el("div",{style:"font-size:11px;color:#6b7280;"},[pg.done+"/"+pg.total+"コマ確定"+(rq.note?" · "+rq.note:"")])
+        ]));
+      });
+    }
+  }
+  build();
+}
+
 function openSettings(){
   var body=[];
   body.push(el("div",{style:"font-size:12px;color:#9ca3af;margin-bottom:8px;"},["データ管理"]));
@@ -834,7 +1025,13 @@ function timeSelect(value, onChange){
 // ── 日別詳細モーダル ──
 function openDayDetail(date){
   var ds=sortDaySessions(S.data.sessions.filter(function(s){return s.date===date;}));
-  var ev=S.data.otherEvents.filter(function(e){return e.date===date;});
+  var ev=S.data.otherEvents.filter(function(e){return e.date===date;}).sort(function(a,b){
+    // 時間指定ありを先に、時間順に並べる
+    if(!a.startTime && !b.startTime) return 0;
+    if(!a.startTime) return 1;
+    if(!b.startTime) return -1;
+    return a.startTime.localeCompare(b.startTime);
+  });
   var d=new Date(date);
   var title=(d.getMonth()+1)+"月"+d.getDate()+"日（"+dowJP(date)+"）";
   var body=[];
@@ -854,7 +1051,7 @@ function openDayDetail(date){
   ev.forEach(function(e){
     list.appendChild(el("div",{style:"display:flex;align-items:center;gap:10px;background:#f5f6fa;border:1px solid #e2e5ee;border-radius:10px;padding:10px 12px;cursor:pointer;",onclick:function(){ openEventEdit(e); }},[
       el("div",{style:"width:8px;height:32px;border-radius:4px;background:"+e.color+";flex-shrink:0;"}),
-      el("div",{style:"flex:1;min-width:0;"},[el("div",{style:"font-size:14px;font-weight:600;color:#1f2937;"},[e.title]), el("div",{style:"font-size:12px;color:"+e.color+";"},[e.category])]),
+      el("div",{style:"flex:1;min-width:0;"},[el("div",{style:"font-size:14px;font-weight:600;color:#1f2937;"},[e.title]), el("div",{style:"font-size:12px;color:"+e.color+";"},[(e.startTime&&e.endTime?e.startTime+"〜"+e.endTime+" · ":"")+e.category])]),
       el("span",{style:"color:#9ca3af;font-size:16px;"},["✎"])
     ]));
   });
@@ -966,6 +1163,18 @@ function openSessionEdit(session, presetDate){
       el("div",{style:"flex:1;min-width:0;"},[el("label",{style:ST.label},["開始"]), el("div",{style:"margin-top:4px;margin-bottom:12px;"},[timeSelect(v.startTime,function(val){v.startTime=val;})])]),
       el("div",{style:"flex:1;min-width:0;"},[el("label",{style:ST.label},["終了"]), el("div",{style:"margin-top:4px;margin-bottom:12px;"},[timeSelect(v.endTime,function(val){v.endTime=val;})])])
     ]));
+    // TAは「時給」か「固定報酬」かを選べる
+    if(v.kind==="ta"){
+      var payRow=el("div",{style:"display:flex;gap:8px;margin-bottom:12px;"});
+      [["hourly","時給 ¥3,000"],["fixed","固定報酬"]].forEach(function(t){
+        var on=((v.payMode||"hourly")===t[0]);
+        payRow.appendChild(el("button",{style:"flex:1;padding:8px;border-radius:8px;border:1px solid #d8dcec;cursor:pointer;font-size:13px;font-weight:600;background:"+(on?"#e0e7ff":"#fff")+";color:#1f2937;",onclick:function(){ v.payMode=t[0]; build(); }},[t[1]]));
+      });
+      body.push(el("div",{},[el("label",{style:ST.label},["報酬の形"]), payRow]));
+      if(v.payMode==="fixed"){
+        body.push(field("金額（円）", el("input",{type:"number",value:v.fixedAmount||"",style:ST.input,oninput:function(e){ v.fixedAmount=parseInt(e.target.value)||0; }})));
+      }
+    }
     if(v.kind==="fixed") body.push(field("金額（円）", el("input",{type:"number",value:v.fixedAmount||"",style:ST.input,oninput:function(e){ v.fixedAmount=parseInt(e.target.value)||0; }})));
     body.push(field("メモ", el("input",{value:v.note||"",style:ST.input,placeholder:"科目など",oninput:function(e){ v.note=e.target.value; }})));
     if(v.kind==="tutor" && v.studentId!==""){
@@ -1061,7 +1270,8 @@ function saveSession(v, isNew){
     deputized: (v.kind==="tutor" && !isCovering) ? !!v.deputized : false,
     depName: isCovering ? (v.depName||"") : "",
     subType: isCovering ? (v.subType||"outside") : undefined,
-    note:v.note||"", kind:v.kind, snapshotRate:rate, fixedAmount:v.fixedAmount||0
+    note:v.note||"", kind:v.kind, snapshotRate:rate, fixedAmount:v.fixedAmount||0,
+    payMode: v.kind==="ta" ? (v.payMode||"hourly") : undefined
   };
   if(isNew) S.data.sessions.push(rec);
   else S.data.sessions=S.data.sessions.map(function(x){return x.id===rec.id?rec:x;});
@@ -1166,21 +1376,39 @@ function openStudentEdit(student){
 function openEventEdit(event, presetDate){
   var isNew=!event;
   var colorMap={ "部活":"#f97316","試験":"#ef4444","学校行事":"#8b5cf6","面談":"#14b8a6","その他":"#6b7280" };
-  var v=event?Object.assign({},event):{ id:null, date:presetDate||todayStr(), title:"", category:"部活", color:"#f97316" };
-  var body=[];
-  body.push(field("タイトル", el("input",{value:v.title,style:ST.input,placeholder:"例: バスケ部練習",oninput:function(e){ v.title=e.target.value; }})));
-  body.push(field("日付", el("input",{type:"date",value:v.date,style:ST.input,onchange:function(e){ v.date=e.target.value; }})));
-  var catSel=el("select",{style:ST.input,onchange:function(e){ v.category=e.target.value; v.color=colorMap[e.target.value]||v.color; }});
-  ["部活","試験","学校行事","面談","その他"].forEach(function(c){ var o=el("option",{value:c},[c]); if(v.category===c)o.selected=true; catSel.appendChild(o); });
-  body.push(field("カテゴリ", catSel));
-  body.push(el("button",{style:ST.addBtn+"width:100%;justify-content:center;",onclick:function(){
-    if(!v.title.trim()){ alert("タイトルを入力してください"); return; }
-    if(isNew){ v.id=newId(S.data.otherEvents); S.data.otherEvents.push(v); }
-    else S.data.otherEvents=S.data.otherEvents.map(function(x){return x.id===v.id?v:x;});
-    save(); closeModal();
-  }},[isNew?"追加する":"保存する"]));
-  if(!isNew) body.push(el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;margin-top:8px;color:#ef4444;border-color:#fecaca;",onclick:function(){ if(confirm("この予定を削除しますか？")){ S.data.otherEvents=S.data.otherEvents.filter(function(x){return x.id!==v.id;}); save(); closeModal(); } }},["この予定を削除"]));
-  S.modal=modalShell(isNew?"予定を追加":"予定を編集", body); render();
+  var v=event?Object.assign({},event):{ id:null, date:presetDate||todayStr(), title:"", category:"部活", color:"#f97316", hasTime:false, startTime:"16:00", endTime:"18:00" };
+  if(v.hasTime===undefined) v.hasTime=!!(v.startTime && v.endTime && event);
+  function build(){
+    var body=[];
+    body.push(field("タイトル", el("input",{value:v.title,style:ST.input,placeholder:"例: バスケ部練習",oninput:function(e){ v.title=e.target.value; }})));
+    body.push(field("日付", el("input",{type:"date",value:v.date,style:ST.input,onchange:function(e){ v.date=e.target.value; }})));
+    // 時間指定（任意）
+    var timeWrap=el("label",{style:"display:flex;align-items:center;gap:8px;margin-bottom:10px;cursor:pointer;"},[
+      el("input",{type:"checkbox",onchange:function(e){ v.hasTime=e.target.checked; build(); }}),
+      el("span",{style:"font-size:13px;color:#1f2937;"},["時間を指定する"])
+    ]);
+    if(v.hasTime) timeWrap.querySelector("input").checked=true;
+    body.push(timeWrap);
+    if(v.hasTime){
+      body.push(el("div",{style:"display:flex;gap:10px;"},[
+        el("div",{style:"flex:1;min-width:0;"},[el("label",{style:ST.label},["開始"]), el("div",{style:"margin-top:4px;margin-bottom:12px;"},[timeSelect(v.startTime||"16:00",function(val){v.startTime=val;})])]),
+        el("div",{style:"flex:1;min-width:0;"},[el("label",{style:ST.label},["終了"]), el("div",{style:"margin-top:4px;margin-bottom:12px;"},[timeSelect(v.endTime||"18:00",function(val){v.endTime=val;})])])
+      ]));
+    }
+    var catSel=el("select",{style:ST.input,onchange:function(e){ v.category=e.target.value; v.color=colorMap[e.target.value]||v.color; }});
+    ["部活","試験","学校行事","面談","その他"].forEach(function(c){ var o=el("option",{value:c},[c]); if(v.category===c)o.selected=true; catSel.appendChild(o); });
+    body.push(field("カテゴリ", catSel));
+    body.push(el("button",{style:ST.addBtn+"width:100%;justify-content:center;",onclick:function(){
+      if(!v.title.trim()){ alert("タイトルを入力してください"); return; }
+      if(!v.hasTime){ v.startTime=""; v.endTime=""; }
+      if(isNew){ v.id=newId(S.data.otherEvents); S.data.otherEvents.push(v); }
+      else S.data.otherEvents=S.data.otherEvents.map(function(x){return x.id===v.id?v:x;});
+      save(); closeModal();
+    }},[isNew?"追加する":"保存する"]));
+    if(!isNew) body.push(el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;margin-top:8px;color:#ef4444;border-color:#fecaca;",onclick:function(){ if(confirm("この予定を削除しますか？")){ S.data.otherEvents=S.data.otherEvents.filter(function(x){return x.id!==v.id;}); save(); closeModal(); } }},["この予定を削除"]));
+    S.modal=modalShell(isNew?"予定を追加":"予定を編集", body); render();
+  }
+  build();
 }
 
 // ── 収入手動入力 ──
