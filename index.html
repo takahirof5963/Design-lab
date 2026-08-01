@@ -442,10 +442,9 @@ function render(){
   ROOT.appendChild(content);
   if(S.modal) ROOT.appendChild(S.modal);
   // ヘッダーの実測高さをCSS変数に反映（月ビューの固定位置に使う）
-  setTimeout(function(){
-    var h=document.getElementById("appHeader");
-    if(h) document.documentElement.style.setProperty("--hdrH", h.offsetHeight+"px");
-  }, 0);
+  // DOM追加直後に同期的に測ることで、初回描画時のレイアウトのズレを防ぐ
+  var h=document.getElementById("appHeader");
+  if(h) document.documentElement.style.setProperty("--hdrH", h.offsetHeight+"px");
 }
 
 function goTab(dir){
@@ -595,7 +594,8 @@ function viewMonth(){
   wrap.appendChild(body);
 
   // 表示範囲の管理（無限スクロールで前後に伸ばす）
-  var rangeStart=new Date(y, m-2, 1);   // 前月から
+  // 開始は「表示月の1日を含む週」。最初から今月が先頭に来るのでスクロールのジャンプが不要
+  var rangeStart=new Date(y, m-1, 1);
   var sdw=rangeStart.getDay(); rangeStart.setDate(rangeStart.getDate()-(sdw===0?6:sdw-1));
   var rangeEnd=new Date(y, m+1, 0);     // 2ヶ月後の末日まで
   var edw=rangeEnd.getDay(); rangeEnd.setDate(rangeEnd.getDate()+(edw===0?0:7-edw));
@@ -660,13 +660,28 @@ function viewMonth(){
 
   // スクロール監視（月タブ表示中のみ有効）
   if(S._monthScrollHandler){ window.removeEventListener("scroll", S._monthScrollHandler); }
+  var busy=false;              // 追加処理中の多重実行を防ぐ
+  var lastY=window.scrollY||0; // スクロール方向の判定用
   S._monthScrollHandler=function(){
     if(S.view!=="month") return;
     var st=window.scrollY||document.documentElement.scrollTop;
-    var vh=window.innerHeight, dh=document.documentElement.scrollHeight;
-    if(st+vh > dh-800) extendForward();
-    if(st < 400) extendBackward();
+    var goingUp = st < lastY;
+    lastY=st;
     updateMonthLabel();
+    if(busy) return;
+    var vh=window.innerHeight, dh=document.documentElement.scrollHeight;
+    // 下端に近づいたら次の月を追加
+    if(st+vh > dh-800){
+      busy=true; extendForward();
+      setTimeout(function(){ busy=false; }, 50);
+      return;
+    }
+    // 上へスクロールしていて上端付近なら前の月を追加
+    // 開いた直後（初期描画で st=0 のまま）は発火しないので画面がガタつかない
+    if(goingUp && st < 300){
+      busy=true; extendBackward();
+      setTimeout(function(){ busy=false; }, 50);
+    }
   };
   window.addEventListener("scroll", S._monthScrollHandler, {passive:true});
 
@@ -687,11 +702,16 @@ function viewMonth(){
     }
   }
 
-  // 月タブを開いたとき/今日ボタン: 今日の位置へ
-  if(S._monthOpenPending || S._monthScrollPending){
-    S._monthOpenPending=false; S._monthScrollPending=false;
+  // 月タブを開いたとき: 今月が先頭に描画済みなので、スクロールせず最上部を表示（画面のガタつき防止）
+  if(S._monthOpenPending){
+    S._monthOpenPending=false;
+    window.scrollTo(0,0);
+  }
+  // 「今日」ボタンのときだけ、今日のマスへスクロール
+  if(S._monthScrollPending){
+    S._monthScrollPending=false;
     setTimeout(function(){
-      var target=anchors.today||anchors.curMonth;
+      var target=anchors.today;
       if(target && target.scrollIntoView){
         target.scrollIntoView({block:"center"});
         updateMonthLabel();
