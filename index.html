@@ -14,7 +14,7 @@
   * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
   html, body { margin: 0; padding: 0; background: #f5f6fa; font-family: -apple-system, 'Hiragino Sans', 'Yu Gothic', sans-serif; color: #1f2937; }
   body { padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom); }
-  input, select, button { font-family: inherit; }
+  input, select, button, textarea { font-family: inherit; }
 </style>
 </head>
 <body>
@@ -59,7 +59,8 @@ var initialData = {
   unavailable: [],
   templates: [],
   lastBackup: null,
-  lastTimes: null
+  lastTimes: null,
+  reports: {}
 };
 
 // ── 状態 ──
@@ -105,7 +106,8 @@ function parseData(p){
     unavailable: p.unavailable||[],
     templates: p.templates||[],
     lastBackup: p.lastBackup||null,
-    lastTimes: p.lastTimes||null
+    lastTimes: p.lastTimes||null,
+    reports: p.reports||{}
   };
 }
 // データの「中身の量」。復旧時にどちらが有効か比較する目安
@@ -311,6 +313,105 @@ function searchSummary(sessions){
   var total=sessions.reduce(function(sum,s){ return sum+calcIncome(s); },0);
   var hours=sessions.reduce(function(sum,s){ return sum+durationH(s.startTime,s.endTime); },0);
   return { count:sessions.length, total:total, hours:hours };
+}
+
+// ── 学年（自動進級） ──
+// 生徒に gradeStage("E"/"J"/"S"/"A") と gradeNum、基準年度 gradeYear を持たせる。
+// 例: gradeStage:"E", gradeNum:4, gradeYear:2026 → 2026年度に小4。以降は年度が進むごとに自動で進級。
+var GRADE_STAGES = [
+  { key:"E", label:"小学生", max:6 },
+  { key:"J", label:"中学生", max:3 },
+  { key:"S", label:"高校生", max:3 },
+  { key:"A", label:"浪人生", max:1 }
+];
+// 年度（4月始まり）を返す
+function schoolYear(d){
+  var dt = d ? new Date(d) : new Date();
+  return dt.getMonth()+1 >= 4 ? dt.getFullYear() : dt.getFullYear()-1;
+}
+// 基準からの経過年数を足して、進級後の学年を求める
+function gradeOf(student, atDate){
+  if(!student || !student.gradeStage || !student.gradeNum) return null;
+  var base = student.gradeYear || schoolYear();
+  var elapsed = schoolYear(atDate) - base;
+  if(elapsed < 0) elapsed = 0;
+  var order = [];
+  GRADE_STAGES.forEach(function(st){
+    for(var i=1;i<=st.max;i++) order.push({stage:st.key, num:i});
+  });
+  var idx = order.findIndex(function(g){ return g.stage===student.gradeStage && g.num===student.gradeNum; });
+  if(idx<0) return student.gradeStage+student.gradeNum;
+  var target = idx + elapsed;
+  if(target >= order.length) target = order.length-1;  // 浪人生より上は据え置き
+  var g = order[target];
+  return g.stage + g.num;
+}
+
+// ── 塾への月次報告 ──
+// その月にシフト調整したコマ数を、生徒ごとに集計（学年順）
+function reportRows(y, m){
+  var ym = y+"-"+pad(m), rows={};
+  S.data.sessions.forEach(function(s){
+    if(s.date.slice(0,7)!==ym) return;
+    var st=studentById(s.studentId);
+    if(!isShiftEligible(st,s)) return;
+    if(!rows[st.id]) rows[st.id]={ id:st.id, name:st.name, grade:gradeOf(st, ym+"-01"), count:0 };
+    rows[st.id].count++;
+  });
+  var list=Object.keys(rows).map(function(k){return rows[k];});
+  // 学年順（E→J→S→A、数字の小さい順）、同学年は名前順
+  var ord={E:0,J:1,S:2,A:3};
+  list.sort(function(a,b){
+    var ga=a.grade||"", gb=b.grade||"";
+    var sa=ord[ga.charAt(0)]!==undefined?ord[ga.charAt(0)]:9, sb=ord[gb.charAt(0)]!==undefined?ord[gb.charAt(0)]:9;
+    if(sa!==sb) return sa-sb;
+    var na=parseInt(ga.slice(1))||0, nb=parseInt(gb.slice(1))||0;
+    if(na!==nb) return na-nb;
+    return a.name.localeCompare(b.name,"ja");
+  });
+  return list;
+}
+function reportKey(y,m){ return y+"-"+pad(m); }
+// 報告文を組み立てる
+function buildReportText(y, m, myName){
+  var rows=reportRows(y,m);
+  var total=rows.reduce(function(sum,r){return sum+r.count;},0);
+  var rep=(S.data.reports||{})[reportKey(y,m)]||{};
+  var comments=rep.comments||{};
+  var lines=[];
+  lines.push("こんばんは！");
+  lines.push(m+"月のチームリーダーとしてのまとめになります！");
+  lines.push("");
+  lines.push("担当　"+(myName||rep.myName||""));
+  rows.forEach(function(r){
+    lines.push(r.name+(r.grade?"　"+r.grade:"")+"　"+r.count+"コマ");
+  });
+  lines.push("合計"+total+"コマ調整させていただきました！");
+  // 学年ごとに所感をまとめる
+  var byGrade={};
+  rows.forEach(function(r){
+    var g=r.grade||"その他";
+    if(!byGrade[g]) byGrade[g]=[];
+    byGrade[g].push(r);
+  });
+  var written=false;
+  Object.keys(byGrade).forEach(function(g){
+    var hasComment=byGrade[g].some(function(r){ return (comments[r.id]||"").trim(); });
+    if(!hasComment) return;
+    lines.push("");
+    lines.push(g);
+    byGrade[g].forEach(function(r){
+      var c=(comments[r.id]||"").trim();
+      if(!c) return;
+      lines.push("");
+      lines.push(r.name);
+      lines.push(c);
+      written=true;
+    });
+  });
+  lines.push("");
+  lines.push("よろしくお願いします🙇");
+  return lines.join("\n");
 }
 
 /* ===== 描画・UI ===== */
@@ -709,6 +810,7 @@ function viewStudents(){
     var typeBadge=el("span",{style:"font-size:11px;font-weight:600;color:#4f46e5;background:#e0e7ff;padding:2px 8px;border-radius:8px;"},[typeLabel]);
     var nameRow=el("div",{style:"display:flex;align-items:center;gap:6px;flex-wrap:wrap;"},[
       el("span",{style:"font-size:15px;font-weight:700;color:#1f2937;"},[student.name]),
+      gradeOf(student)?el("span",{style:"font-size:11px;font-weight:700;color:#0369a1;background:#e0f2fe;padding:2px 7px;border-radius:8px;"},[gradeOf(student)]):null,
       student.leader?el("span",{style:"font-size:10px;font-weight:700;color:#4f46e5;background:#e0e7ff;padding:2px 7px;border-radius:10px;"},["リーダー"+(student.leaderUntil?"〜"+student.leaderUntil.replace("-","/"):"")]):null,
       student.retired?el("span",{style:"font-size:10px;font-weight:700;color:#b91c1c;background:#fee2e2;padding:2px 7px;border-radius:10px;"},["退塾"+(student.retiredDate?" "+mmdd(student.retiredDate):"")]):null
     ]);
@@ -837,6 +939,7 @@ function viewIncome(){
       el("span",{style:"font-size:13px;font-weight:700;color:#1f2937;"},["合計"]),
       el("span",{style:"font-size:15px;font-weight:700;color:#4f46e5;"},[totalShift+"コマ（¥"+(totalShift*SHIFT_FEE).toLocaleString()+"）"])
     ]));
+    sb.appendChild(el("button",{style:ST.addBtn+"width:100%;justify-content:center;margin-top:12px;",onclick:function(){ openReport(y,m); }},["📋 塾への報告文を作る"]));
     wrap.appendChild(sb);
   }
 
@@ -887,6 +990,80 @@ function viewIncome(){
 function closeModal(){ S.modal=null; render(); }
 
 // 設定メニュー（データ管理）
+// ── 塾への月次報告 ──
+function openReport(y, m){
+  var key=reportKey(y,m);
+  if(!S.data.reports) S.data.reports={};
+  if(!S.data.reports[key]) S.data.reports[key]={ myName:"", comments:{} };
+  var rep=S.data.reports[key];
+  var rows=reportRows(y,m);
+  var total=rows.reduce(function(sum,r){return sum+r.count;},0);
+
+  function build(){
+    var body=[];
+    if(rows.length===0){
+      body.push(el("div",{style:"color:#9ca3af;text-align:center;padding:24px 0;font-size:13px;"},[m+"月に調整したコマがありません。"]));
+      S.modal=modalShell(y+"年"+m+"月 塾への報告", body); render(); return;
+    }
+    body.push(field("担当（自分の名前）", el("input",{value:rep.myName||"",style:ST.input,placeholder:"例: 山田",oninput:function(e){ rep.myName=e.target.value; }})));
+    // コマ数一覧（自動）
+    var listBox=el("div",{style:ST.card+"margin-bottom:14px;"});
+    listBox.appendChild(el("div",{style:"font-size:12px;font-weight:700;color:#4f46e5;margin-bottom:8px;"},["調整コマ数（自動集計）"]));
+    rows.forEach(function(r){
+      listBox.appendChild(el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;"},[
+        el("span",{style:"font-size:13px;color:#374151;"},[r.name+(r.grade?"　"+r.grade:"")]),
+        el("span",{style:"font-size:13px;font-weight:700;color:#4f46e5;"},[r.count+"コマ"])
+      ]));
+    });
+    listBox.appendChild(el("div",{style:"border-top:1px solid #e2e5ee;margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;"},[
+      el("span",{style:"font-size:13px;font-weight:700;"},["合計"]),
+      el("span",{style:"font-size:14px;font-weight:800;color:#4f46e5;"},[total+"コマ"])
+    ]));
+    body.push(listBox);
+    // 生徒ごとの所感
+    body.push(el("div",{style:"font-size:12px;font-weight:700;color:#4f46e5;margin-bottom:6px;"},["生徒ごとの所感"]));
+    rows.forEach(function(r){
+      var wrapC=el("div",{style:"margin-bottom:10px;"});
+      wrapC.appendChild(el("label",{style:ST.label},[r.name+(r.grade?"（"+r.grade+"）":"")]));
+      var ta=el("textarea",{style:ST.input+"min-height:70px;resize:vertical;line-height:1.5;",placeholder:"学習の様子・今後の方針など",
+        oninput:function(e){ rep.comments[r.id]=e.target.value; }});
+      ta.value=rep.comments[r.id]||"";
+      wrapC.appendChild(ta);
+      body.push(wrapC);
+    });
+    // 保存・プレビュー・コピー
+    body.push(el("button",{style:ST.addBtn+"width:100%;justify-content:center;margin-top:4px;",onclick:function(){
+      save();
+      showReportText(y,m);
+    }},["📋 報告文を作成する"]));
+    body.push(el("div",{style:"font-size:11px;color:#9ca3af;margin-top:8px;"},["入力した所感は保存され、後から見直せます。"]));
+    S.modal=modalShell(y+"年"+m+"月 塾への報告", body); render();
+  }
+  build();
+}
+
+// 生成した報告文を表示してコピーできるようにする
+function showReportText(y, m){
+  var rep=(S.data.reports||{})[reportKey(y,m)]||{};
+  var text=buildReportText(y, m, rep.myName);
+  var body=[];
+  var ta=el("textarea",{style:ST.input+"min-height:340px;font-size:13px;line-height:1.6;resize:vertical;"});
+  ta.value=text;
+  body.push(ta);
+  body.push(el("button",{style:ST.addBtn+"width:100%;justify-content:center;margin-top:8px;",onclick:function(){
+    try{
+      ta.select(); ta.setSelectionRange(0, 999999);
+      if(navigator.clipboard && navigator.clipboard.writeText){
+        navigator.clipboard.writeText(ta.value).then(function(){ alert("コピーしました。"); }).catch(function(){ document.execCommand("copy"); alert("コピーしました。"); });
+      } else {
+        document.execCommand("copy"); alert("コピーしました。");
+      }
+    }catch(e){ alert("コピーできませんでした。文章を長押しして選択・コピーしてください。"); }
+  }},["全文をコピー"]));
+  body.push(el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;margin-top:8px;",onclick:function(){ openReport(y,m); }},["← 所感の編集に戻る"]));
+  S.modal=modalShell(m+"月の報告文", body); render();
+}
+
 // ── 検索 ──
 function openSearch(){
   var q = S._searchQuery || "";
@@ -1328,10 +1505,41 @@ function duplicateSession(src){
 function openStudentEdit(student){
   var isNew=!student;
   var palette=["#6366f1","#8b5cf6","#ec4899","#f59e0b","#10b981","#3b82f6","#ef4444","#f97316","#14b8a6","#a855f7"];
-  var v=student?Object.assign({},student):{ id:null, name:"", type:"outside", color:palette[0], leader:false, leaderUntil:"", retired:false, retiredDate:"" };
+  var v=student?Object.assign({},student):{ id:null, name:"", type:"outside", color:palette[0], leader:false, leaderUntil:"", retired:false, retiredDate:"", gradeStage:"", gradeNum:0, gradeYear:schoolYear() };
   function build(){
     var body=[];
     body.push(field("名前", el("input",{value:v.name,style:ST.input,placeholder:"生徒名",oninput:function(e){ v.name=e.target.value; }})));
+    // 学年（4月始まりで自動進級）
+    var gRow=el("div",{style:"display:flex;gap:6px;margin-bottom:6px;"});
+    GRADE_STAGES.forEach(function(st){
+      var on=(v.gradeStage===st.key);
+      gRow.appendChild(el("button",{style:"flex:1;padding:8px 4px;border-radius:8px;border:1px solid #d8dcec;cursor:pointer;font-size:12px;font-weight:600;background:"+(on?"#e0e7ff":"#fff")+";color:#1f2937;",
+        onclick:function(){ v.gradeStage=st.key; if(!v.gradeNum||v.gradeNum>st.max) v.gradeNum=1; if(!v.gradeYear) v.gradeYear=schoolYear(); reopen(); }},[st.key+" "+st.label]));
+    });
+    var gradeBox=el("div",{},[el("label",{style:ST.label},["学年"]), gRow]);
+    if(v.gradeStage){
+      var stObj=GRADE_STAGES.find(function(s){return s.key===v.gradeStage;});
+      var numRow=el("div",{style:"display:flex;gap:6px;margin-bottom:6px;"});
+      for(var i=1;i<=stObj.max;i++){
+        (function(n){
+          var on=(v.gradeNum===n);
+          numRow.appendChild(el("button",{style:"flex:1;padding:8px;border-radius:8px;border:1px solid #d8dcec;cursor:pointer;font-size:13px;font-weight:600;background:"+(on?"#e0e7ff":"#fff")+";color:#1f2937;",
+            onclick:function(){ v.gradeNum=n; reopen(); }},[v.gradeStage+n]));
+        })(i);
+      }
+      gradeBox.appendChild(numRow);
+      var ySel=el("select",{style:ST.input+"margin-bottom:4px;",onchange:function(e){ v.gradeYear=parseInt(e.target.value); reopen(); }});
+      var cy=schoolYear();
+      for(var yy=cy-3; yy<=cy+1; yy++){
+        var o=el("option",{value:String(yy)},[yy+"年度に "+v.gradeStage+v.gradeNum]);
+        if((v.gradeYear||cy)===yy) o.selected=true;
+        ySel.appendChild(o);
+      }
+      gradeBox.appendChild(el("label",{style:ST.label},["いつの学年か（4月始まり・以降は自動で進級）"]));
+      gradeBox.appendChild(ySel);
+      gradeBox.appendChild(el("div",{style:"font-size:11px;color:#059669;margin-bottom:12px;"},["今年度の学年: "+(gradeOf(v)||"—")]));
+    }
+    body.push(gradeBox);
     var typeRow=el("div",{style:"display:flex;gap:8px;margin-bottom:12px;"});
     [["outside","塾外 (¥3,750/h)"],["inside","塾内 (¥3,000/h)"]].forEach(function(t){
       typeRow.appendChild(el("button",{style:"flex:1;padding:8px;border-radius:8px;border:1px solid #d8dcec;cursor:pointer;font-size:13px;background:"+(v.type===t[0]?"#e0e7ff":"#fff")+";color:#1f2937;",onclick:function(){ v.type=t[0]; reopen(); }},[t[1]]));
@@ -1622,7 +1830,7 @@ function loadBackup(file){
       }
       msg+="今のデータをこの内容で置き換えます。よろしいですか？";
       if(confirm(msg)){
-        S.data={ sessions:data.sessions||[], students:data.students||[], otherEvents:data.otherEvents||[], requests:data.requests||[], manualIncome:data.manualIncome||{}, manualNet:data.manualNet||{}, unavailable:data.unavailable||[], templates:data.templates||[], lastBackup:data.lastBackup||null, lastTimes:data.lastTimes||null };
+        S.data={ sessions:data.sessions||[], students:data.students||[], otherEvents:data.otherEvents||[], requests:data.requests||[], manualIncome:data.manualIncome||{}, manualNet:data.manualNet||{}, unavailable:data.unavailable||[], templates:data.templates||[], lastBackup:data.lastBackup||null, lastTimes:data.lastTimes||null, reports:data.reports||{} };
         save(); render(); alert("読み込みが完了しました。");
       }
     }catch(err){ alert("ファイルの読み込みに失敗しました。"); }
