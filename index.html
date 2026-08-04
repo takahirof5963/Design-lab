@@ -1025,7 +1025,7 @@ function openReport(y, m){
       body.push(el("div",{style:"color:#9ca3af;text-align:center;padding:24px 0;font-size:13px;"},[m+"月に調整したコマがありません。"]));
       S.modal=modalShell(y+"年"+m+"月 塾への報告", body); render(); return;
     }
-    body.push(field("担当（自分の名前）", el("input",{value:rep.myName||"",style:ST.input,placeholder:"例: 山田",oninput:function(e){ rep.myName=e.target.value; }})));
+    body.push(field("担当（自分の名前）", el("input",{value:rep.myName||"",style:ST.input,placeholder:"例: 山田",oninput:function(e){ rep.myName=e.target.value; save(); }})));
     // コマ数一覧（自動）
     var listBox=el("div",{style:ST.card+"margin-bottom:14px;"});
     listBox.appendChild(el("div",{style:"font-size:12px;font-weight:700;color:#4f46e5;margin-bottom:8px;"},["調整コマ数（自動集計）"]));
@@ -1042,15 +1042,29 @@ function openReport(y, m){
     body.push(listBox);
     // 生徒ごとの所感
     body.push(el("div",{style:"font-size:12px;font-weight:700;color:#4f46e5;margin-bottom:6px;"},["生徒ごとの所感"]));
-    rows.forEach(function(r){
+    // 調整コマがある生徒に加え、すでに所感を書いてある生徒も表示（コマ数変更で消えないように）
+    var commentRows=rows.slice();
+    Object.keys(rep.comments||{}).forEach(function(sid){
+      if(!(rep.comments[sid]||"").trim()) return;
+      if(commentRows.some(function(r){ return String(r.id)===String(sid); })) return;
+      var st=studentById(parseInt(sid));
+      if(st) commentRows.push({ id:st.id, name:st.name, grade:gradeOf(st, y+"-"+pad(m)+"-01"), count:0, extra:true });
+    });
+    commentRows.forEach(function(r){
       var wrapC=el("div",{style:"margin-bottom:10px;"});
-      wrapC.appendChild(el("label",{style:ST.label},[r.name+(r.grade?"（"+r.grade+"）":"")]));
+      wrapC.appendChild(el("label",{style:ST.label},[r.name+(r.grade?"（"+r.grade+"）":"")+(r.extra?"　※今月の調整コマなし":"")]));
       var ta=el("textarea",{style:ST.input+"min-height:70px;resize:vertical;line-height:1.5;",placeholder:"学習の様子・今後の方針など",
-        oninput:function(e){ rep.comments[r.id]=e.target.value; }});
+        oninput:function(e){
+          rep.comments[r.id]=e.target.value;
+          save();  // 入力するたびに保存（閉じても消えない）
+          var st=document.getElementById("repSaved");
+          if(st){ st.textContent="✓ 自動保存しました"; st.style.color="#059669"; }
+        }});
       ta.value=rep.comments[r.id]||"";
       wrapC.appendChild(ta);
       body.push(wrapC);
     });
+    body.push(el("div",{id:"repSaved",style:"font-size:11px;color:#9ca3af;margin-bottom:8px;text-align:right;"},["入力すると自動で保存されます"]));
     // 保存・プレビュー・コピー
     body.push(el("button",{style:ST.addBtn+"width:100%;justify-content:center;margin-top:4px;",onclick:function(){
       save();
@@ -1188,7 +1202,11 @@ function openSettings(){
   S.modal=modalShell("設定", body); render();
 }
 function modalShell(title, bodyNodes){
-  var overlay=el("div",{style:"position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:flex-start;justify-content:center;padding:40px 12px;overflow:auto;z-index:1000;",
+  // 同じモーダルを作り直すときだけスクロール位置を保つ（先頭に戻らないように）
+  var prev=document.getElementById("modalOverlay");
+  var sameModal = !!(prev && prev.getAttribute("data-title")===title);
+  var keepTop = sameModal ? prev.scrollTop : 0;
+  var overlay=el("div",{id:"modalOverlay","data-title":title,style:"position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:flex-start;justify-content:center;padding:40px 12px;overflow:auto;z-index:1000;",
     onclick:function(e){ if(e.target===overlay) closeModal(); }});
   var box=el("div",{style:"background:#fff;border-radius:16px;padding:20px;max-width:440px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,0.2);"});
   box.appendChild(el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"},[
@@ -1197,6 +1215,10 @@ function modalShell(title, bodyNodes){
   ]));
   bodyNodes.forEach(function(n){ if(n) box.appendChild(n); });
   overlay.appendChild(box);
+  if(keepTop>0){
+    // DOMに載った直後に位置を復元
+    setTimeout(function(){ overlay.scrollTop=keepTop; }, 0);
+  }
   return overlay;
 }
 function field(labelText, inputNode){
@@ -1743,9 +1765,23 @@ function openRequestEdit(request){
         v.slots.length>1?el("button",{style:"background:none;border:none;color:#ef4444;font-size:13px;cursor:pointer;",onclick:function(){ v.slots.splice(idx,1); build(); }},["削除"]):null
       ]));
       var stRow=el("div",{style:"display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;"});
+      var stBtns=[];
       Object.keys(REQUEST_STATUS).forEach(function(key){
         var st=REQUEST_STATUS[key];
-        stRow.appendChild(el("button",{style:"padding:5px 10px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:"+(slot.status===key?st.color:"#e5e7eb")+";color:"+(slot.status===key?"#fff":"#6b7280")+";",onclick:function(){ slot.status=key; build(); }},[st.label]));
+        var btn=el("button",{style:"padding:5px 10px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:600;background:"+(slot.status===key?st.color:"#e5e7eb")+";color:"+(slot.status===key?"#fff":"#6b7280")+";",
+          onclick:function(){
+            // モーダルを作り直すとスクロール位置が戻るので、ボタンの見た目だけ更新する
+            slot.status=key;
+            stBtns.forEach(function(b){
+              var on=(b.dataset.key===key);
+              var s=REQUEST_STATUS[b.dataset.key];
+              b.style.background = on ? s.color : "#e5e7eb";
+              b.style.color = on ? "#fff" : "#6b7280";
+            });
+          }},[st.label]);
+        btn.dataset.key=key;
+        stBtns.push(btn);
+        stRow.appendChild(btn);
       });
       sc.appendChild(stRow);
       sc.appendChild(el("label",{style:ST.label},["確定日（任意）"]));
