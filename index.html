@@ -459,6 +459,7 @@ function goTab(dir){
   if(v==="month"){
     var d=new Date();
     S.currentMonth={year:d.getFullYear(),month:d.getMonth()+1};
+    S._monthRange=null;
     S._monthOpenPending=true;
   } else {
     window.scrollTo(0,0);
@@ -502,7 +503,8 @@ function header(){
           // 月タブに入るときは常に「今日」を基準に戻す
           var n=new Date();
           S.currentMonth={year:n.getFullYear(),month:n.getMonth()+1};
-          S._monthOpenPending=true;
+          S._monthRange=null;
+    S._monthOpenPending=true;
         } else {
           window.scrollTo(0,0);
         }
@@ -594,11 +596,20 @@ function viewMonth(){
   wrap.appendChild(body);
 
   // 表示範囲の管理（無限スクロールで前後に伸ばす）
-  // 開始は「表示月の1日を含む週」。最初から今月が先頭に来るのでスクロールのジャンプが不要
-  var rangeStart=new Date(y, m-1, 1);
-  var sdw=rangeStart.getDay(); rangeStart.setDate(rangeStart.getDate()-(sdw===0?6:sdw-1));
-  var rangeEnd=new Date(y, m+1, 0);     // 2ヶ月後の末日まで
-  var edw=rangeEnd.getDay(); rangeEnd.setDate(rangeEnd.getDate()+(edw===0?0:7-edw));
+  // 予定の編集などで再描画されても、見ていた範囲・位置を保つ
+  var rangeStart, rangeEnd;
+  var keepScroll = null;
+  if(S._monthRange && !S._monthOpenPending && !S._monthScrollPending){
+    // 直前まで見ていた範囲をそのまま復元
+    rangeStart=new Date(S._monthRange.start);
+    rangeEnd=new Date(S._monthRange.end);
+    keepScroll=(window.scrollY||document.documentElement.scrollTop||0);
+  } else {
+    rangeStart=new Date(y, m-1, 1);
+    var sdw=rangeStart.getDay(); rangeStart.setDate(rangeStart.getDate()-(sdw===0?6:sdw-1));
+    rangeEnd=new Date(y, m+1, 0);
+    var edw=rangeEnd.getDay(); rangeEnd.setDate(rangeEnd.getDate()+(edw===0?0:7-edw));
+  }
 
   var anchors={ curMonth:null, today:null };
 
@@ -635,6 +646,9 @@ function viewMonth(){
   }
 
   buildWeeks(rangeStart, rangeEnd).forEach(function(n){ body.appendChild(n); });
+  // 現在の表示範囲を覚えておく（再描画時の復元用）
+  function rememberRange(){ S._monthRange={ start:ymd(rangeStart), end:ymd(rangeEnd) }; }
+  rememberRange();
 
   // 下方向に1ヶ月分追加
   function extendForward(){
@@ -643,6 +657,7 @@ function viewMonth(){
     var edw2=to.getDay(); to.setDate(to.getDate()+(edw2===0?0:7-edw2));
     buildWeeks(from, to).forEach(function(n){ body.appendChild(n); });
     rangeEnd=to;
+    rememberRange();
   }
   // 上方向に1ヶ月分追加（スクロール位置を維持）
   function extendBackward(){
@@ -656,6 +671,7 @@ function viewMonth(){
     var after=document.documentElement.scrollHeight;
     window.scrollBy(0, after-before);  // 見ている位置がずれないよう補正
     rangeStart=from;
+    rememberRange();
   }
 
   // スクロール監視（月タブ表示中のみ有効）
@@ -708,7 +724,7 @@ function viewMonth(){
     window.scrollTo(0,0);
   }
   // 「今日」ボタンのときだけ、今日のマスへスクロール
-  if(S._monthScrollPending){
+  else if(S._monthScrollPending){
     S._monthScrollPending=false;
     setTimeout(function(){
       var target=anchors.today;
@@ -716,6 +732,13 @@ function viewMonth(){
         target.scrollIntoView({block:"center"});
         updateMonthLabel();
       }
+    }, 0);
+  }
+  // 予定の編集などによる再描画: 見ていた位置をそのまま保つ（過去を見ていても戻らない）
+  else if(keepScroll!=null){
+    setTimeout(function(){
+      window.scrollTo(0, keepScroll);
+      updateMonthLabel();
     }, 0);
   }
   return wrap;
@@ -760,13 +783,17 @@ function goToday(){
   var now=new Date();
   S.currentWeek=todayStr();
   S.currentMonth={year:now.getFullYear(),month:now.getMonth()+1};
-  if(S.view==="month") S._monthScrollPending=true; else window.scrollTo(0,0);
+  if(S.view==="month"){ S._monthRange=null; S._monthScrollPending=true; }
+  else window.scrollTo(0,0);
   render();
 }
 function shiftMonth(dir){
   var m=S.currentMonth.month+dir, y=S.currentMonth.year;
   if(m<1){m=12;y--;} if(m>12){m=1;y++;}
-  S.currentMonth={year:y,month:m}; window.scrollTo(0,0); render();
+  S.currentMonth={year:y,month:m};
+  S._monthRange=null;          // 表示範囲を作り直す
+  S._monthOpenPending=true;    // 先頭から表示
+  render();
 }
 
 /* ===== 依頼・生徒・収入ビュー＋モーダル ===== */
