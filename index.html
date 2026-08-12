@@ -134,6 +134,11 @@ function save(){
     localStorage.setItem(BACKUP_KEY, json);
   }catch(e){}
 }
+// データを変更したあと、カレンダー等の表示も作り直したいときに使う
+function saveAndRefresh(){
+  save();
+  S._needsBgRefresh=true;
+}
 // バックアップJSONの中身を要約（復元前の確認用）
 function summarizeBackup(d){
   var ss=d.sessions||[];
@@ -429,6 +434,23 @@ var ST = {
 var ROOT = null;
 function render(){
   if(!ROOT) ROOT=document.getElementById("root");
+
+  // モーダルだけの入れ替えなら、背景（カレンダー等）は作り直さない。
+  // 作り直すとスクロール位置が乱れるため。
+  var existingModal=document.getElementById("modalOverlay");
+  if(S._bgBuilt && S.view===S._bgView){
+    if(S.modal){
+      if(existingModal) ROOT.replaceChild(S.modal, existingModal);
+      else ROOT.appendChild(S.modal);
+      return;
+    }
+    if(!S.modal && existingModal && !S._needsBgRefresh){
+      ROOT.removeChild(existingModal);
+      return;
+    }
+  }
+  S._needsBgRefresh=false;
+
   ROOT.innerHTML="";
   ROOT.appendChild(header());
   var content=el("div",{style:"padding:16px 8px;max-width:900px;margin:0 auto;min-height:70vh;"});
@@ -441,6 +463,7 @@ function render(){
   else if(S.view==="income") content.appendChild(viewIncome());
   ROOT.appendChild(content);
   if(S.modal) ROOT.appendChild(S.modal);
+  S._bgBuilt=true; S._bgView=S.view;
   // ヘッダーの実測高さをCSS変数に反映（月ビューの固定位置に使う）
   // DOM追加直後に同期的に測ることで、初回描画時のレイアウトのズレを防ぐ
   var h=document.getElementById("appHeader");
@@ -572,7 +595,7 @@ function viewWeek(){
   });
   return el("div",{},[head,grid]);
 }
-function shiftWeek(days){ var d=new Date(S.currentWeek); d.setDate(d.getDate()+days); S.currentWeek=ymd(d); render(); }
+function shiftWeek(days){ var d=new Date(S.currentWeek); d.setDate(d.getDate()+days); S.currentWeek=ymd(d); S._needsBgRefresh=true; render(); }
 
 // ── 月ビュー ──
 // ── 月ビュー（無限スクロール） ──
@@ -814,7 +837,7 @@ function viewRequests(){
       el("div",{style:"font-size:15px;font-weight:700;color:#1f2937;"},[r.studentName||"(名前なし)"]),
       el("div",{style:"display:flex;align-items:center;gap:8px;"},[
         el("span",{style:"font-size:12px;color:"+(pg.allDone?"#059669":"#b45309")+";font-weight:600;"},[pg.done+"/"+pg.total+"コマ確定"]),
-        el("button",{style:"background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#ef4444;font-size:18px;width:38px;height:38px;cursor:pointer;flex-shrink:0;",onclick:function(e){ e.stopPropagation(); if(confirm("「"+r.studentName+"」の依頼を削除しますか？")){ S.data.requests=S.data.requests.filter(function(x){return x.id!==r.id;}); save(); render(); } }},["×"])
+        el("button",{style:"background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#ef4444;font-size:18px;width:38px;height:38px;cursor:pointer;flex-shrink:0;",onclick:function(e){ e.stopPropagation(); if(confirm("「"+r.studentName+"」の依頼を削除しますか？")){ S.data.requests=S.data.requests.filter(function(x){return x.id!==r.id;}); saveAndRefresh(); render(); } }},["×"])
       ])
     ]);
     card.appendChild(top);
@@ -870,7 +893,7 @@ function viewStudents(){
       el("div",{style:"width:12px;height:36px;border-radius:6px;background:"+(student.retired?"#cbd5e1":student.color)+";flex-shrink:0;"}),
       el("div",{style:"flex:1;min-width:0;"},[nameRow, el("div",{style:"margin-top:3px;"},[typeBadge])]),
       right,
-      el("button",{style:"background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#ef4444;font-size:18px;width:38px;height:38px;cursor:pointer;flex-shrink:0;",onclick:function(e){ e.stopPropagation(); if(confirm("「"+student.name+"」を完全に削除しますか？\nこの生徒の授業データもすべて消えます。\n（在籍をやめるだけなら編集で「退塾」を使うとデータは残せます）")){ S.data.students=S.data.students.filter(function(x){return x.id!==student.id;}); save(); render(); } }},["×"])
+      el("button",{style:"background:#fef2f2;border:1px solid #fecaca;border-radius:8px;color:#ef4444;font-size:18px;width:38px;height:38px;cursor:pointer;flex-shrink:0;",onclick:function(e){ e.stopPropagation(); if(confirm("「"+student.name+"」を完全に削除しますか？\nこの生徒の授業データもすべて消えます。\n（在籍をやめるだけなら編集で「退塾」を使うとデータは残せます）")){ S.data.students=S.data.students.filter(function(x){return x.id!==student.id;}); saveAndRefresh(); render(); } }},["×"])
     ]);
   }
   wrap.appendChild(el("div",{style:"font-size:14px;color:#6b7280;margin-bottom:12px;"},["在籍中の生徒 ("+active.length+"人)"]));
@@ -917,7 +940,7 @@ function viewIncome(){
   ]));
   var editBtns=el("div",{style:"display:flex;gap:8px;margin-top:12px;"},[
     el("button",{style:ST.ghostBtn+"padding:6px 14px;font-size:12px;",onclick:function(){ openIncomeEdit(y,m,inc); }},["授業収入を手動入力"]),
-    manual?el("button",{style:ST.ghostBtn+"padding:6px 14px;font-size:12px;color:#4f46e5;",onclick:function(){ delete S.data.manualIncome[monthKey(y,m)]; save(); render(); }},["自動計算に戻す"]):null
+    manual?el("button",{style:ST.ghostBtn+"padding:6px 14px;font-size:12px;color:#4f46e5;",onclick:function(){ delete S.data.manualIncome[monthKey(y,m)]; saveAndRefresh(); render(); }},["自動計算に戻す"]):null
   ]);
   c.appendChild(editBtns);
   wrap.appendChild(c);
@@ -933,7 +956,7 @@ function viewIncome(){
   nc.appendChild(el("div",{style:"font-size:11px;color:#9ca3af;margin-top:2px;"},[m+"月の勤務分は"+payP.month+"月に支給。手取り額（税・保険料を引いた後）を入力"]));
   nc.appendChild(el("div",{style:"display:flex;gap:8px;margin-top:10px;"},[
     el("button",{style:ST.ghostBtn+"padding:6px 14px;font-size:12px;",onclick:function(){ openNetEdit(y,m,net); }},["受け取った額を入力"]),
-    (net!=null)?el("button",{style:ST.ghostBtn+"padding:6px 14px;font-size:12px;color:#4f46e5;",onclick:function(){ delete S.data.manualNet[monthKey(payP.year,payP.month)]; save(); render(); }},["クリア"]):null
+    (net!=null)?el("button",{style:ST.ghostBtn+"padding:6px 14px;font-size:12px;color:#4f46e5;",onclick:function(){ delete S.data.manualNet[monthKey(payP.year,payP.month)]; saveAndRefresh(); render(); }},["クリア"]):null
   ]));
   wrap.appendChild(nc);
 
@@ -993,9 +1016,9 @@ function viewIncome(){
   // 年間（支給ベース）
   var gy = S.incomeYear;
   wrap.appendChild(el("div",{style:"display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;"},[
-    el("button",{style:ST.navBtn+"width:30px;height:30px;font-size:16px;",onclick:function(){ S.incomeYear--; render(); }},["‹"]),
+    el("button",{style:ST.navBtn+"width:30px;height:30px;font-size:16px;",onclick:function(){ S.incomeYear--; S._needsBgRefresh=true; render(); }},["‹"]),
     el("div",{style:"font-size:14px;font-weight:700;color:#6b7280;"},[gy+"年 年間"]),
-    el("button",{style:ST.navBtn+"width:30px;height:30px;font-size:16px;",onclick:function(){ S.incomeYear++; render(); }},["›"])
+    el("button",{style:ST.navBtn+"width:30px;height:30px;font-size:16px;",onclick:function(){ S.incomeYear++; S._needsBgRefresh=true; render(); }},["›"])
   ]));
   var values=MONTHS.map(function(_,i){ return paidIncomeFor(gy,i+1); });
   var yearTotal=values.reduce(function(a,b){return a+b;},0);
@@ -1018,7 +1041,7 @@ function viewIncome(){
     var mm=i+1, val=values[i], pct=(val/max)*100, w=workMonthFor(gy,mm), man=isManual(w.year,w.month);
     var netVal=netByPayMonth(gy,mm);
     // タップ：上の詳細を「勤務月」に飛ばす（年もまたぐ）。年間グラフ(incomeYear)は動かさない
-    ygrid.appendChild(el("div",{style:ST.card+"padding:12px 14px;cursor:pointer;",onclick:function(){ S.currentMonth={year:w.year,month:w.month}; window.scrollTo(0,0); render(); }},[
+    ygrid.appendChild(el("div",{style:ST.card+"padding:12px 14px;cursor:pointer;",onclick:function(){ S.currentMonth={year:w.year,month:w.month}; window.scrollTo(0,0); S._needsBgRefresh=true; render(); }},[
       el("div",{style:"font-size:12px;color:#6b7280;margin-bottom:2px;"},[label+"支給"+(man?" ※手動":"")]),
       el("div",{style:"font-size:9px;color:#9ca3af;margin-bottom:4px;"},[w.year+"年"+w.month+"月勤務分"]),
       el("div",{style:"background:#e2e5ee;border-radius:4px;height:4px;margin-bottom:6px;"},[el("div",{style:"background:"+(val>0?"#6366f1":"#e5e7eb")+";height:4px;border-radius:4px;width:"+pct+"%;"})]),
@@ -1223,7 +1246,7 @@ function openSettings(){
   lbl.appendChild(inp); body.push(lbl);
   body.push(el("div",{style:"font-size:11px;color:#9ca3af;margin:8px 0 20px;line-height:1.6;"},["「書き出す」でデータをファイルに保存できます。iCloud Drive（ファイルアプリ）に保存すれば、万一のときも復元できます。週1回ほどの書き出しをおすすめします。"]));
   body.push(el("div",{style:"border-top:1px solid #e2e5ee;padding-top:16px;"},[
-    el("button",{style:ST.ghostBtn+"color:#ef4444;border-color:#fecaca;width:100%;justify-content:center;",onclick:function(){ if(confirm("すべてのデータを消して初期状態に戻します。よろしいですか？")){ try{localStorage.removeItem(STORAGE_KEY);}catch(e){} S.data=JSON.parse(JSON.stringify(initialData)); save(); closeModal(); } }},["すべてのデータをリセット"])
+    el("button",{style:ST.ghostBtn+"color:#ef4444;border-color:#fecaca;width:100%;justify-content:center;",onclick:function(){ if(confirm("すべてのデータを消して初期状態に戻します。よろしいですか？")){ try{localStorage.removeItem(STORAGE_KEY);}catch(e){} S.data=JSON.parse(JSON.stringify(initialData)); saveAndRefresh(); closeModal(); } }},["すべてのデータをリセット"])
   ]));
   body.push(el("div",{style:"font-size:11px;color:#9ca3af;margin-top:12px;"},["入力した内容はこの端末に自動保存されます。"]));
   S.modal=modalShell("設定", body); render();
@@ -1315,7 +1338,7 @@ function openDayDetail(date){
           el("div",{style:"font-size:13px;font-weight:700;color:"+col+";"},[labelTxt]),
           u.reason?el("div",{style:"font-size:12px;color:#6b7280;"},[u.reason]):null
         ]),
-        el("button",{style:"background:none;border:none;color:#ef4444;font-size:16px;cursor:pointer;",onclick:function(){ S.data.unavailable=S.data.unavailable.filter(function(x){return x!==u;}); save(); openDayDetail(date); }},["×"])
+        el("button",{style:"background:none;border:none;color:#ef4444;font-size:16px;cursor:pointer;",onclick:function(){ S.data.unavailable=S.data.unavailable.filter(function(x){return x!==u;}); saveAndRefresh(); openDayDetail(date); }},["×"])
       ]));
     });
     body.push(uwrap);
@@ -1349,7 +1372,7 @@ function openUnavailEdit(date){
     body.push(field("理由（任意）", el("input",{value:v.reason,style:ST.input,placeholder:"例: 部活の試合、家の用事など",oninput:function(e){ v.reason=e.target.value; }})));
     body.push(el("button",{style:ST.addBtn+"width:100%;justify-content:center;",onclick:function(){
       S.data.unavailable.push({ date:v.date, allDay:v.allDay, startTime:v.allDay?"":v.startTime, endTime:v.allDay?"":v.endTime, reason:v.reason||"" });
-      save(); openDayDetail(date);
+      saveAndRefresh(); openDayDetail(date);
     }},["設定する"]));
     var d=new Date(date);
     S.modal=modalShell((d.getMonth()+1)+"月"+d.getDate()+"日 バイト不可", body); render();
@@ -1471,7 +1494,7 @@ function openSessionEdit(session, presetDate){
     body.push(el("button",{style:ST.addBtn+"width:100%;justify-content:center;margin-top:4px;",onclick:function(){ saveSession(v, isNew); }},[isNew?"追加する":"保存する"]));
     if(!isNew){
       body.push(el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;margin-top:8px;",onclick:function(){ duplicateSession(v); }},["別の日にコピーする"]));
-      body.push(el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;margin-top:8px;color:#ef4444;border-color:#fecaca;",onclick:function(){ if(confirm("この授業を削除しますか？")){ S.data.sessions=S.data.sessions.filter(function(x){return x.id!==v.id;}); save(); closeModal(); } }},["この授業を削除"]));
+      body.push(el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;margin-top:8px;color:#ef4444;border-color:#fecaca;",onclick:function(){ if(confirm("この授業を削除しますか？")){ S.data.sessions=S.data.sessions.filter(function(x){return x.id!==v.id;}); saveAndRefresh(); closeModal(); } }},["この授業を削除"]));
     }
     S.modal=modalShell(isNew?"授業・業務を追加":"授業・業務を編集", body); render();
   }
@@ -1543,7 +1566,7 @@ function saveSession(v, isNew){
       startTime:rec.startTime, endTime:rec.endTime, note:rec.note||"", fixedAmount:rec.fixedAmount||0
     });
   }
-  save(); closeModal();
+  saveAndRefresh(); closeModal();
   if(repAdded>0){
     alert("繰り返し登録しました：この日を含めて計"+(repAdded+1)+"件。"+(repSkipped>0?"\n（"+repSkipped+"件は既に予定があるためスキップしました）":""));
   }
@@ -1564,7 +1587,7 @@ function duplicateSession(src){
     if(w.length && !confirm(w.join("\n")+"\n\nこのままコピーしますか？")) return;
     var copy=Object.assign({}, src, { id:newId(S.data.sessions), date:v.date });
     S.data.sessions.push(copy);
-    save(); closeModal();
+    saveAndRefresh(); closeModal();
     alert(v.date.replace(/-/g,"/")+" にコピーしました。");
   }},["この日にコピー"]));
   S.modal=modalShell("別の日にコピー", body); render();
@@ -1641,7 +1664,7 @@ function openStudentEdit(student){
       if(!v.name.trim()){ alert("名前を入力してください"); return; }
       if(isNew){ v.id=newId(S.data.students); S.data.students.push(v); }
       else S.data.students=S.data.students.map(function(x){return x.id===v.id?v:x;});
-      save(); closeModal();
+      saveAndRefresh(); closeModal();
     }},[isNew?"追加する":"保存する"]));
     S.modal=modalShell(isNew?"生徒を追加":"生徒を編集", body); render();
   }
@@ -1680,9 +1703,9 @@ function openEventEdit(event, presetDate){
       if(!v.hasTime){ v.startTime=""; v.endTime=""; }
       if(isNew){ v.id=newId(S.data.otherEvents); S.data.otherEvents.push(v); }
       else S.data.otherEvents=S.data.otherEvents.map(function(x){return x.id===v.id?v:x;});
-      save(); closeModal();
+      saveAndRefresh(); closeModal();
     }},[isNew?"追加する":"保存する"]));
-    if(!isNew) body.push(el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;margin-top:8px;color:#ef4444;border-color:#fecaca;",onclick:function(){ if(confirm("この予定を削除しますか？")){ S.data.otherEvents=S.data.otherEvents.filter(function(x){return x.id!==v.id;}); save(); closeModal(); } }},["この予定を削除"]));
+    if(!isNew) body.push(el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;margin-top:8px;color:#ef4444;border-color:#fecaca;",onclick:function(){ if(confirm("この予定を削除しますか？")){ S.data.otherEvents=S.data.otherEvents.filter(function(x){return x.id!==v.id;}); saveAndRefresh(); closeModal(); } }},["この予定を削除"]));
     S.modal=modalShell(isNew?"予定を追加":"予定を編集", body); render();
   }
   build();
@@ -1694,7 +1717,7 @@ function openIncomeEdit(y,m,cur){
   var body=[
     field("金額（円）", el("input",{type:"number",value:val,style:ST.input,oninput:function(e){ val=e.target.value; }})),
     el("div",{style:"font-size:11px;color:#9ca3af;margin-bottom:16px;"},["入力するとこの月は手動の金額で表示されます（自動計算より優先）。"]),
-    el("button",{style:ST.addBtn+"width:100%;justify-content:center;",onclick:function(){ var n=parseInt(val); S.data.manualIncome[monthKey(y,m)]=isNaN(n)?0:n; save(); closeModal(); }},["保存する"])
+    el("button",{style:ST.addBtn+"width:100%;justify-content:center;",onclick:function(){ var n=parseInt(val); S.data.manualIncome[monthKey(y,m)]=isNaN(n)?0:n; saveAndRefresh(); closeModal(); }},["保存する"])
   ];
   S.modal=modalShell(y+"年 "+m+"月の授業収入", body); render();
 }
@@ -1710,7 +1733,7 @@ function openNetEdit(y,m,cur){
       var k=monthKey(p.year,p.month);
       if(val===""){ delete S.data.manualNet[k]; }
       else { var n=parseInt(val); S.data.manualNet[k]=isNaN(n)?0:n; }
-      save(); closeModal();
+      saveAndRefresh(); closeModal();
     }},["保存する"])
   ];
   S.modal=modalShell(y+"年 "+m+"月 受け取った額", body); render();
@@ -1865,7 +1888,7 @@ function openRequestEdit(request){
       });
       if(isNew){ v.id=newId(S.data.requests); S.data.requests.push(v); }
       else S.data.requests=S.data.requests.map(function(x){return x.id===v.id?v:x;});
-      save(); closeModal();
+      saveAndRefresh(); closeModal();
       if(added>0 || updated>0){
         var msg="";
         if(added>0) msg+=added+"コマをカレンダーに登録しました。";
@@ -1914,7 +1937,7 @@ function loadBackup(file){
       msg+="今のデータをこの内容で置き換えます。よろしいですか？";
       if(confirm(msg)){
         S.data={ sessions:data.sessions||[], students:data.students||[], otherEvents:data.otherEvents||[], requests:data.requests||[], manualIncome:data.manualIncome||{}, manualNet:data.manualNet||{}, unavailable:data.unavailable||[], templates:data.templates||[], lastBackup:data.lastBackup||null, lastTimes:data.lastTimes||null, reports:data.reports||{} };
-        save(); render(); alert("読み込みが完了しました。");
+        saveAndRefresh(); render(); alert("読み込みが完了しました。");
       }
     }catch(err){ alert("ファイルの読み込みに失敗しました。"); }
   };
