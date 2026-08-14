@@ -451,6 +451,9 @@ function render(){
   }
   S._needsBgRefresh=false;
 
+  // 中身を消すと高さが縮んでスクロール位置が失われるため、消す前に控えておく
+  S._scrollBeforeRender = (window.scrollY||document.documentElement.scrollTop||0);
+
   ROOT.innerHTML="";
   ROOT.appendChild(header());
   var content=el("div",{style:"padding:16px 8px;max-width:900px;margin:0 auto;min-height:70vh;"});
@@ -490,11 +493,22 @@ function goTab(dir){
   render();
 }
 function attachSwipe(node, onPrev, onNext){
-  var sx=0, sy=0;
-  node.addEventListener("touchstart", function(e){ sx=e.touches[0].clientX; sy=e.touches[0].clientY; });
+  var sx=0, sy=0, st=0, multi=false;
+  node.addEventListener("touchstart", function(e){
+    multi = e.touches.length>1;           // 2本指（ピンチ等）は対象外
+    sx=e.touches[0].clientX; sy=e.touches[0].clientY;
+    st=Date.now();
+  });
   node.addEventListener("touchend", function(e){
+    if(multi) return;
     var dx=e.changedTouches[0].clientX-sx, dy=e.changedTouches[0].clientY-sy;
-    if(Math.abs(dx)>60 && Math.abs(dx)>Math.abs(dy)*1.5){ dx>0?onPrev():onNext(); }
+    var dt=Date.now()-st;
+    // 素早い横方向の動きのときだけタブを切り替える
+    // （長押しやゆっくりした指の移動では誤作動しないよう、時間と距離・角度を厳しめに判定）
+    if(dt>500) return;                    // 0.5秒以上かかった動きは無視
+    if(Math.abs(dx)<90) return;           // 横移動が小さいものは無視
+    if(Math.abs(dx) < Math.abs(dy)*2) return; // 縦方向が混ざる動きは無視
+    dx>0 ? onPrev() : onNext();
   });
 }
 
@@ -622,11 +636,22 @@ function viewMonth(){
   // 予定の編集などで再描画されても、見ていた範囲・位置を保つ
   var rangeStart, rangeEnd;
   var keepScroll = null;
-  if(S._monthRange && !S._monthOpenPending && !S._monthScrollPending){
+  // 保存された範囲が壊れている/広すぎる場合は使わない（過去へ暴走した状態からの復帰用）
+  var rangeOK = false;
+  if(S._monthRange){
+    var rs=new Date(S._monthRange.start), re=new Date(S._monthRange.end);
+    var spanDays=(re-rs)/(24*60*60*1000);
+    var viewFirst=new Date(y, m-1, 1);
+    var gapDays=Math.abs(viewFirst-rs)/(24*60*60*1000);
+    // 範囲は1年以内、かつ表示月から半年以上離れていないこと
+    rangeOK = !isNaN(rs) && !isNaN(re) && spanDays>0 && spanDays<400 && gapDays<200;
+  }
+  if(rangeOK && !S._monthOpenPending && !S._monthScrollPending){
     // 直前まで見ていた範囲をそのまま復元
     rangeStart=new Date(S._monthRange.start);
     rangeEnd=new Date(S._monthRange.end);
-    keepScroll=(window.scrollY||document.documentElement.scrollTop||0);
+    // 画面を消す前に控えた位置を使う（消した後だと高さが縮んで値が壊れる）
+    keepScroll=(S._scrollBeforeRender!=null ? S._scrollBeforeRender : 0);
   } else {
     rangeStart=new Date(y, m-1, 1);
     var sdw=rangeStart.getDay(); rangeStart.setDate(rangeStart.getDate()-(sdw===0?6:sdw-1));
@@ -695,32 +720,25 @@ function viewMonth(){
     window.scrollBy(0, after-before);  // 見ている位置がずれないよう補正
     rangeStart=from;
     rememberRange();
+    refreshEdgeButtons();
   }
 
-  // スクロール監視（月タブ表示中のみ有効）
+  // 前の月・次の月を読み込むボタン（自動継ぎ足しは位置補正が連鎖して暴走するため使わない）
+  var topBtn=el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;margin-bottom:8px;",onclick:function(){ extendBackward(); }},["↑ 前の月を読み込む"]);
+  var bottomBtn=el("button",{style:ST.ghostBtn+"width:100%;justify-content:center;margin-top:8px;",onclick:function(){ extendForward(); refreshEdgeButtons(); }},["↓ 次の月を読み込む"]);
+  function refreshEdgeButtons(){
+    topBtn.textContent="↑ "+(rangeStart.getMonth()===0?12:rangeStart.getMonth())+"月ごろを読み込む";
+    bottomBtn.textContent="↓ "+(rangeEnd.getMonth()+2>12?1:rangeEnd.getMonth()+2)+"月ごろを読み込む";
+  }
+  refreshEdgeButtons();
+  wrap.insertBefore(topBtn, body);
+  wrap.appendChild(bottomBtn);
+
+  // スクロール監視：ヘッダーの月表示を更新するだけ（表示範囲は変えない）
   if(S._monthScrollHandler){ window.removeEventListener("scroll", S._monthScrollHandler); }
-  var busy=false;              // 追加処理中の多重実行を防ぐ
-  var lastY=window.scrollY||0; // スクロール方向の判定用
   S._monthScrollHandler=function(){
     if(S.view!=="month") return;
-    var st=window.scrollY||document.documentElement.scrollTop;
-    var goingUp = st < lastY;
-    lastY=st;
     updateMonthLabel();
-    if(busy) return;
-    var vh=window.innerHeight, dh=document.documentElement.scrollHeight;
-    // 下端に近づいたら次の月を追加
-    if(st+vh > dh-800){
-      busy=true; extendForward();
-      setTimeout(function(){ busy=false; }, 50);
-      return;
-    }
-    // 上へスクロールしていて上端付近なら前の月を追加
-    // 開いた直後（初期描画で st=0 のまま）は発火しないので画面がガタつかない
-    if(goingUp && st < 300){
-      busy=true; extendBackward();
-      setTimeout(function(){ busy=false; }, 50);
-    }
   };
   window.addEventListener("scroll", S._monthScrollHandler, {passive:true});
 
